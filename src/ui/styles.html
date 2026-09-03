@@ -251,6 +251,77 @@
   }
   .cl-sum-btns { display: flex; gap: 8px; }
 
+  /* ── 대시보드 (Phase 3) ── */
+  .dash-filter { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; align-items: end; }
+  .dash-filter-btns { grid-column: 1 / -1; display: flex; gap: 8px; }
+  .dash-filter input[type="date"] { padding: 9px 10px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+  .tile {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 16px;
+  }
+  .tile .t-label { font-size: 12px; color: var(--muted); font-weight: 700; }
+  .tile .t-value { font-size: 24px; font-weight: 800; color: var(--brand); margin-top: 4px; }
+  .tile.warn .t-value { color: var(--warn); }
+  .tile.danger .t-value { color: var(--danger); }
+
+  .warn-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .warn-col h4 { margin: 0 0 8px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .warn-n {
+    background: var(--brand-soft); color: var(--brand); font-size: 11px;
+    font-weight: 800; border-radius: 999px; padding: 1px 7px;
+  }
+  .warn-none { color: var(--muted); font-size: 12px; }
+  .chip {
+    display: inline-block; background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 10px; font-size: 12px; margin: 0 6px 6px 0;
+  }
+  .chip.d { border-color: var(--danger); color: var(--danger); }
+
+  .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+  .store-card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px;
+  }
+  .store-card .sc-name { font-weight: 700; font-size: 13px; }
+  .store-card .sc-score { font-size: 26px; font-weight: 800; color: var(--brand); line-height: 1.2; }
+  .store-card .sc-meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .bar { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; display: inline-block; width: 90px; vertical-align: middle; }
+  .bar > span { display: block; height: 100%; background: var(--brand); }
+  .bar.low > span { background: var(--danger); }
+  .bar.mid > span { background: var(--warn); }
+  .bar-cap { font-size: 11px; color: var(--muted); margin-left: 6px; }
+
+  .link-btn {
+    background: none; border: none; color: var(--brand); font: inherit; font-weight: 700;
+    cursor: pointer; text-decoration: underline; padding: 0;
+  }
+  table.mini tr.row-x td { background: var(--danger-soft); }
+
+  .modal { position: fixed; inset: 0; background: rgba(46,38,33,.45); display: grid; place-items: center; z-index: 80; padding: 20px; }
+  .modal-box {
+    background: var(--surface); border-radius: var(--radius-lg);
+    max-width: 660px; width: 100%; max-height: 88vh; overflow: auto;
+    padding: 22px; box-shadow: var(--shadow);
+  }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .modal-head .btn { padding: 7px 14px; }
+  .dm-head h3 { margin: 0 0 8px; }
+  .dm-photos { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+  .dm-photos figure { margin: 0; width: 160px; }
+  .dm-photos img { width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--line); }
+  .dm-photos figcaption { font-size: 12px; color: var(--muted); text-align: center; margin-top: 4px; }
+
+  @media print {
+    body * { visibility: hidden; }
+    .modal, .modal * { visibility: visible; }
+    .modal { position: absolute; inset: 0; background: #fff; padding: 0; display: block; }
+    .modal-box { box-shadow: none; max-height: none; max-width: none; }
+    .no-print { display: none !important; }
+  }
+
   @media (max-width: 640px) {
     .topbar { height: auto; padding: 8px 14px; }
     .brand { width: 100%; }
@@ -260,5 +331,8 @@
     .cl-summary { margin: 8px -14px 0; padding: 12px 14px; }
     .cl-sum-btns { width: 100%; }
     .cl-sum-btns .btn { flex: 1; }
+    .dash-filter { grid-template-columns: 1fr 1fr; }
+    .tiles { grid-template-columns: 1fr 1fr; }
+    .warn-cols { grid-template-columns: 1fr; }
   }
 </style>

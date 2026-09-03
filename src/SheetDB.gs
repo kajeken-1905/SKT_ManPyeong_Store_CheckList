@@ -159,3 +159,14 @@ function newId_(prefix) {
 function nowKst_() {
   return Utilities.formatDate(new Date(), 'Asia/Seoul', "yyyy-MM-dd'T'HH:mm:ss");
 }
+
+/** 시트 값이 Date 로 자동 변환됐어도 일관된 문자열로. */
+function asStr_(v) {
+  if (v instanceof Date) return Utilities.formatDate(v, 'Asia/Seoul', 'yyyy-MM-dd HH:mm');
+  return v == null ? '' : String(v);
+}
+
+/** 'yyyy-MM-dd' 부분만. */
+function asDay_(v) {
+  return asStr_(v).slice(0, 10);
+}

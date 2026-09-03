@@ -93,14 +93,31 @@ function saveInspection(token, payload) {
   });
 }
 
-/* ────────────────────────────────────────────────────────────
- *  Phase 3~4 에서 구현 예정 (자리표시자)
- * ──────────────────────────────────────────────────────────── */
-
-/** [Phase 3] 대시보드 데이터 */
+/**
+ * [Phase 3] 대시보드 데이터.
+ * @param {string} token
+ * @param {Object} filter {from, to, store_id, grade, status}
+ */
 function getDashboard(token, filter) {
-  throw new Error('아직 구현되지 않았습니다. (Phase 3)');
+  return withAuth_(token, null, function (user) {
+    return buildDashboard_(user, filter || {});
+  });
 }
+
+/**
+ * [Phase 3] 점검 1건 상세 보고서.
+ * @param {string} token
+ * @param {string} inspectionId
+ */
+function getInspectionDetail(token, inspectionId) {
+  return withAuth_(token, null, function (user) {
+    return getInspectionDetail_(user, inspectionId);
+  });
+}
+
+/* ────────────────────────────────────────────────────────────
+ *  Phase 4 에서 구현 예정 (자리표시자)
+ * ──────────────────────────────────────────────────────────── */
 
 /** [Phase 4] 매장별 일/주/월/연 집계 */
 function getStoreSummary(token, storeId, period) {

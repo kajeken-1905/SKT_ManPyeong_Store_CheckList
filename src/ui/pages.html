@@ -1,7 +1,8 @@
 <script>
 /* 페이지별 초기화 훅.
- * - initChecklistPage: ui/checklist.html 에 정의 (Phase 2)
- * - initDashboardPage / initStoresPage: Phase 3~4 에서 구현
+ * - initChecklistPage : ui/checklist.html (Phase 2)
+ * - initDashboardPage : ui/dashboard.html (Phase 3)
+ * - initStoresPage    : 아래 (Phase 4 에서 확장)
  */
 
 function initStoresPage(MP) {
@@ -12,9 +13,5 @@ function initStoresPage(MP) {
     return '<tr><td>' + s.store_id + '</td><td>' + s.name +
       '</td><td>' + s.team + '</td><td>' + s.leader + '</td></tr>';
   }).join('') || '<tr><td colspan="4">표시할 매장이 없습니다.</td></tr>';
-}
-
-function initDashboardPage(MP) {
-  /* Phase 3 에서 구현 */
 }
 </script>

@@ -256,6 +256,77 @@
   }
   .cl-sum-btns { display: flex; gap: 8px; }
 
+  /* ── 대시보드 (Phase 3) ── */
+  .dash-filter { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; align-items: end; }
+  .dash-filter-btns { grid-column: 1 / -1; display: flex; gap: 8px; }
+  .dash-filter input[type="date"] { padding: 9px 10px; }
+
+  .tiles { display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px; margin-bottom: 16px; }
+  .tile {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px 16px;
+  }
+  .tile .t-label { font-size: 12px; color: var(--muted); font-weight: 700; }
+  .tile .t-value { font-size: 24px; font-weight: 800; color: var(--brand); margin-top: 4px; }
+  .tile.warn .t-value { color: var(--warn); }
+  .tile.danger .t-value { color: var(--danger); }
+
+  .warn-cols { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .warn-col h4 { margin: 0 0 8px; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .warn-n {
+    background: var(--brand-soft); color: var(--brand); font-size: 11px;
+    font-weight: 800; border-radius: 999px; padding: 1px 7px;
+  }
+  .warn-none { color: var(--muted); font-size: 12px; }
+  .chip {
+    display: inline-block; background: var(--surface-2); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px 10px; font-size: 12px; margin: 0 6px 6px 0;
+  }
+  .chip.d { border-color: var(--danger); color: var(--danger); }
+
+  .store-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
+  .store-card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: var(--radius); box-shadow: var(--shadow); padding: 14px;
+  }
+  .store-card .sc-name { font-weight: 700; font-size: 13px; }
+  .store-card .sc-score { font-size: 26px; font-weight: 800; color: var(--brand); line-height: 1.2; }
+  .store-card .sc-meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+
+  .bar { height: 8px; background: var(--surface-2); border-radius: 999px; overflow: hidden; display: inline-block; width: 90px; vertical-align: middle; }
+  .bar > span { display: block; height: 100%; background: var(--brand); }
+  .bar.low > span { background: var(--danger); }
+  .bar.mid > span { background: var(--warn); }
+  .bar-cap { font-size: 11px; color: var(--muted); margin-left: 6px; }
+
+  .link-btn {
+    background: none; border: none; color: var(--brand); font: inherit; font-weight: 700;
+    cursor: pointer; text-decoration: underline; padding: 0;
+  }
+  table.mini tr.row-x td { background: var(--danger-soft); }
+
+  .modal { position: fixed; inset: 0; background: rgba(46,38,33,.45); display: grid; place-items: center; z-index: 80; padding: 20px; }
+  .modal-box {
+    background: var(--surface); border-radius: var(--radius-lg);
+    max-width: 660px; width: 100%; max-height: 88vh; overflow: auto;
+    padding: 22px; box-shadow: var(--shadow);
+  }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+  .modal-head .btn { padding: 7px 14px; }
+  .dm-head h3 { margin: 0 0 8px; }
+  .dm-photos { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 12px; }
+  .dm-photos figure { margin: 0; width: 160px; }
+  .dm-photos img { width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--line); }
+  .dm-photos figcaption { font-size: 12px; color: var(--muted); text-align: center; margin-top: 4px; }
+
+  @media print {
+    body * { visibility: hidden; }
+    .modal, .modal * { visibility: visible; }
+    .modal { position: absolute; inset: 0; background: #fff; padding: 0; display: block; }
+    .modal-box { box-shadow: none; max-height: none; max-width: none; }
+    .no-print { display: none !important; }
+  }
+
   @media (max-width: 640px) {
     .topbar { height: auto; padding: 8px 14px; }
     .brand { width: 100%; }
@@ -265,6 +336,9 @@
     .cl-summary { margin: 8px -14px 0; padding: 12px 14px; }
     .cl-sum-btns { width: 100%; }
     .cl-sum-btns .btn { flex: 1; }
+    .dash-filter { grid-template-columns: 1fr 1fr; }
+    .tiles { grid-template-columns: 1fr 1fr; }
+    .warn-cols { grid-template-columns: 1fr; }
   }
 </style>
 
@@ -382,23 +456,43 @@
       <template id="tpl-dashboard">
   <div class="page-head">
     <h2>결과 대시보드</h2>
-    <p>전체 매장의 최근 점검 현황과 재점검 · 경고 대상을 한눈에 봅니다.</p>
+    <p id="dashScope">—</p>
   </div>
 
-  <div class="card">
-    <div class="placeholder">
-      <span class="badge">Phase 3 예정</span>
-      <p>이 페이지에서 구현될 기능:</p>
-      <table class="mini">
-        <thead><tr><th>구분</th><th>내용</th></tr></thead>
-        <tbody>
-          <tr><td>최근 점검 목록</td><td>기간 · 매장 · 판정 필터</td></tr>
-          <tr><td>매장별 상태 카드</td><td>최근 점수 · 판정 · 재점검 여부</td></tr>
-          <tr><td>경고 리스트</td><td>재점검 대상 / 90점 미만 / 2회 연속 미만</td></tr>
-          <tr><td>취약점 분석</td><td>항목별 감점 빈도</td></tr>
-          <tr><td>상세 보고서</td><td>점검 1건 상세 + 인쇄/PDF</td></tr>
-        </tbody>
-      </table>
+  <div class="card dash-filter">
+    <label class="fld"><span class="fld-label">시작일</span><input type="date" id="dfFrom"></label>
+    <label class="fld"><span class="fld-label">종료일</span><input type="date" id="dfTo"></label>
+    <label class="fld"><span class="fld-label">매장</span>
+      <select id="dfStore"><option value="">전체</option></select>
+    </label>
+    <label class="fld"><span class="fld-label">판정</span>
+      <select id="dfGrade"><option value="">전체</option></select>
+    </label>
+    <label class="fld"><span class="fld-label">상태</span>
+      <select id="dfStatus">
+        <option value="">전체</option>
+        <option value="제출">제출</option>
+        <option value="임시저장">임시저장</option>
+      </select>
+    </label>
+    <div class="dash-filter-btns">
+      <button type="button" id="dfApply" class="btn">조회</button>
+      <button type="button" id="dfReset" class="btn btn-ghost">초기화</button>
+    </div>
+  </div>
+
+  <div id="dashBody"><div class="loading">불러오는 중…</div></div>
+
+  <div id="dashModal" class="modal" hidden>
+    <div class="modal-box">
+      <div class="modal-head no-print">
+        <strong>점검 상세</strong>
+        <span>
+          <button type="button" id="dmPrint" class="btn btn-ghost">인쇄 / PDF</button>
+          <button type="button" id="dmClose" class="btn btn-ghost">닫기</button>
+        </span>
+      </div>
+      <div id="dmBody"></div>
     </div>
   </div>
 </template>
@@ -502,6 +596,68 @@
       email: 'dev+' + role + '@example.com', canSeeAllStores: all };
   }
 
+  function mkDashboard(vis, scopeLabel, filter) {
+    filter = filter || {};
+    var today = new Date();
+    function day(off) { var x = new Date(today); x.setDate(x.getDate() - off); return x.toISOString().slice(0, 10); }
+    var seqs = [[94,91,96],[92,90,93],[96,95,98],[88,91,90],[97,96,95],[91,93,89],[83,86,79]];
+    var allIns = [];
+    vis.forEach(function (s, idx) {
+      (seqs[idx % seqs.length]).forEach(function (total, k) {
+        var grade = total >= 95 ? '우수' : total >= 90 ? '양호' : total >= 85 ? '관리 필요' : '개선 필요';
+        allIns.push({
+          inspection_id: 'INS_' + s.store_id + '_' + k,
+          store_id: s.store_id, store: s.name, team: s.team,
+          at: day(k * 7) + ' 14:30',
+          inspector: '[개발]' + (s.team === '함께팀' ? '정시영' : '정수빈'), role: '그룹장',
+          total: total, grade: grade, recheck: total < 90, round: 0, under90: total < 90, status: '제출'
+        });
+      });
+    });
+    allIns.sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+
+    var storeCards = vis.map(function (s) {
+      var list = allIns.filter(function (i) { return i.store_id === s.store_id; });
+      var last = list[0];
+      var streak = 0;
+      for (var k = 0; k < list.length; k++) { if (list[k].under90) streak++; else break; }
+      var avg = list.length ? Math.round(list.reduce(function (t, x) { return t + x.total; }, 0) / list.length * 10) / 10 : null;
+      return {
+        store_id: s.store_id, name: s.name, team: s.team, count: list.length, avg: avg,
+        lastAt: last ? last.at : '', lastTotal: last ? last.total : null, lastGrade: last ? last.grade : '',
+        lastRecheck: last ? last.recheck : false, lastUnder90: last ? last.under90 : false, under90Streak: streak
+      };
+    });
+    var warnings = {
+      recheck: storeCards.filter(function (c) { return c.lastRecheck; }),
+      under90: storeCards.filter(function (c) { return c.lastUnder90; }),
+      streak2: storeCards.filter(function (c) { return c.under90Streak >= 2; })
+    };
+    var fSub = allIns.slice();
+    if (filter.store_id) fSub = fSub.filter(function (i) { return i.store_id === filter.store_id; });
+    if (filter.grade) fSub = fSub.filter(function (i) { return i.grade === filter.grade; });
+    if (filter.status) fSub = fSub.filter(function (i) { return i.status === filter.status; });
+    var stat = {
+      submittedCount: fSub.length,
+      avgScore: fSub.length ? Math.round(fSub.reduce(function (t, x) { return t + x.total; }, 0) / fSub.length * 10) / 10 : null,
+      recheckCount: warnings.recheck.length, under90Count: warnings.under90.length, streak2Count: warnings.streak2.length
+    };
+    var itemWeakness = ITEMS.map(function (it, idx) {
+      var avg = Math.round(Math.max(0, it.max - (idx % 3 === 0 ? 2.5 : idx % 3 === 1 ? 1 : 0.3)) * 10) / 10;
+      return {
+        item_id: it.item_id, no: it.no, name: it.name, max: it.max,
+        avg: avg, ratio: Math.round(avg / it.max * 100),
+        xCount: idx % 4 === 0 ? 2 : 0, belowCount: idx % 2, n: fSub.length
+      };
+    }).sort(function (a, b) { return a.ratio - b.ratio; });
+
+    return {
+      scope: scopeLabel, stores: vis, grades: ['우수', '양호', '관리 필요', '개선 필요'],
+      stat: stat, warnings: warnings, storeCards: storeCards, itemWeakness: itemWeakness,
+      recent: fSub.slice(0, 100)
+    };
+  }
+
   var API = {
     getAuthConfig: function () { return { devMode: true, googleClientId: '', ready: true }; },
     devLogin: function (role) {
@@ -517,6 +673,36 @@
         user: u, stores: stores, items: ITEMS, gradeRules: GRADE_RULES,
         under90Actions: ACTIONS, maxTotal: 100, criticalXThreshold: 2,
         serverTime: new Date().toISOString().slice(0, 19)
+      };
+    },
+    getDashboard: function (token, filter) {
+      var role = String(token).split('.')[1] || '그룹장';
+      var u = userFor(role);
+      var vis = u.canSeeAllStores ? STORES : STORES.filter(function (s) { return s.team === u.team; });
+      return mkDashboard(vis, u.canSeeAllStores ? '전체 매장' : u.team, filter || {});
+    },
+    getInspectionDetail: function (token, id) {
+      var parts = String(id).split('_');
+      var storeId = parts[1], k = Number(parts[2]) || 0;
+      var s = STORES.filter(function (x) { return x.store_id === storeId; })[0] || STORES[0];
+      var totals = [94, 91, 96, 88, 92, 90];
+      var total = totals[k % totals.length] || 88;
+      var grade = total >= 95 ? '우수' : total >= 90 ? '양호' : total >= 85 ? '관리 필요' : '개선 필요';
+      var scores = ITEMS.map(function (it, idx) {
+        var sc = Math.max(0, it.max - (idx === 0 ? 4 : idx === 2 ? 2 : 0));
+        return {
+          item_id: it.item_id, no: it.no, name: it.name, max: it.max, score: sc,
+          isX: idx === 2, reason: idx === 0 ? '개인물품 정리 미흡' : '', note: ''
+        };
+      });
+      return {
+        inspection: {
+          inspection_id: id, store: s.name, store_id: storeId,
+          at: new Date().toISOString().slice(0, 10) + ' 14:30', inspector: '[개발]점검자', role: '그룹장',
+          total: total, grade: grade, recheck: total < 90, round: 0, under90: total < 90,
+          status: '제출', createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+        },
+        scores: scores, photos: [], under90Actions: total < 90 ? ACTIONS.slice() : []
       };
     },
     saveInspection: function (token, payload) {
@@ -577,8 +763,9 @@
 </script>
 <script>
 /* 페이지별 초기화 훅.
- * - initChecklistPage: ui/checklist.html 에 정의 (Phase 2)
- * - initDashboardPage / initStoresPage: Phase 3~4 에서 구현
+ * - initChecklistPage : ui/checklist.html (Phase 2)
+ * - initDashboardPage : ui/dashboard.html (Phase 3)
+ * - initStoresPage    : 아래 (Phase 4 에서 확장)
  */
 
 function initStoresPage(MP) {
@@ -589,10 +776,6 @@ function initStoresPage(MP) {
     return '<tr><td>' + s.store_id + '</td><td>' + s.name +
       '</td><td>' + s.team + '</td><td>' + s.leader + '</td></tr>';
   }).join('') || '<tr><td colspan="4">표시할 매장이 없습니다.</td></tr>';
-}
-
-function initDashboardPage(MP) {
-  /* Phase 3 에서 구현 */
 }
 </script>
 
@@ -873,6 +1056,207 @@ function initDashboardPage(MP) {
       };
       img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('image load error')); };
       img.src = url;
+    });
+  }
+})();
+</script>
+
+  <script>
+/* ────────────────────────────────────────────────────────────
+ *  결과 대시보드 (Phase 3)
+ * ──────────────────────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  window.initDashboardPage = function (MP) {
+    if (!MP || !MP.boot) return;
+    var root = document.getElementById('dashBody');
+    if (!root) return;
+
+    var elScope = document.getElementById('dashScope');
+    var dfFrom = document.getElementById('dfFrom');
+    var dfTo = document.getElementById('dfTo');
+    var dfStore = document.getElementById('dfStore');
+    var dfGrade = document.getElementById('dfGrade');
+    var dfStatus = document.getElementById('dfStatus');
+    var modal = document.getElementById('dashModal');
+    var dmBody = document.getElementById('dmBody');
+
+    /* 필터 옵션 */
+    MP.boot.stores.forEach(function (s) {
+      dfStore.appendChild(opt(s.store_id, s.name));
+    });
+    MP.boot.gradeRules.forEach(function (r) {
+      dfGrade.appendChild(opt(r.grade, r.grade));
+    });
+
+    document.getElementById('dfApply').addEventListener('click', load);
+    document.getElementById('dfReset').addEventListener('click', function () {
+      dfFrom.value = dfTo.value = dfStore.value = dfGrade.value = dfStatus.value = '';
+      load();
+    });
+    document.getElementById('dmClose').addEventListener('click', closeModal);
+    document.getElementById('dmPrint').addEventListener('click', function () { window.print(); });
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+
+    load();
+
+    /* ── 데이터 로드 ─────────────────────────────────────── */
+    function load() {
+      root.innerHTML = '<div class="loading">불러오는 중…</div>';
+      var filter = {
+        from: dfFrom.value || '', to: dfTo.value || '',
+        store_id: dfStore.value || '', grade: dfGrade.value || '',
+        status: dfStatus.value || ''
+      };
+      MP.gs('getDashboard', MP.token, filter)
+        .then(render)
+        .catch(function (e) {
+          root.innerHTML = '<div class="card">불러오지 못했습니다: ' + esc(errText(e)) + '</div>';
+        });
+    }
+
+    /* ── 렌더 ───────────────────────────────────────────── */
+    function render(d) {
+      elScope.textContent = '대상 범위: ' + d.scope + ' · 매장 ' + d.stores.length + '개';
+
+      var st = d.stat;
+      var tiles =
+        '<div class="tiles">' +
+          tile('제출 건수', st.submittedCount, '') +
+          tile('평균 점수', st.avgScore == null ? '—' : st.avgScore, '') +
+          tile('재점검 대상', st.recheckCount, st.recheckCount ? 'warn' : '') +
+          tile('90점 미만', st.under90Count, st.under90Count ? 'danger' : '') +
+          tile('2회 연속 미만', st.streak2Count, st.streak2Count ? 'danger' : '') +
+        '</div>';
+
+      var warn =
+        '<div class="card"><h3 class="sec-title">경고 대상 (현재 상태 기준)</h3><div class="warn-cols">' +
+          warnCol('재점검 대상', d.warnings.recheck, 'd') +
+          warnCol('90점 미만', d.warnings.under90, 'd') +
+          warnCol('2회 연속 90점 미만', d.warnings.streak2, 'd') +
+        '</div></div>';
+
+      var cards = '<div class="card"><h3 class="sec-title">매장별 현재 상태</h3><div class="store-grid">' +
+        d.storeCards.map(storeCard).join('') + '</div></div>';
+
+      var weak = '<div class="card"><h3 class="sec-title">항목별 취약점 (감점 많은 순)</h3>' +
+        '<table class="mini"><thead><tr><th>#</th><th>항목</th><th>평균</th><th>달성률</th><th>X</th><th>감점 건수</th></tr></thead><tbody>' +
+        d.itemWeakness.map(function (w) {
+          var r = w.ratio;
+          var cls = r == null ? '' : (r < 70 ? 'low' : (r < 90 ? 'mid' : ''));
+          return '<tr><td>' + w.no + '</td><td>' + esc(w.name) + '</td>' +
+            '<td>' + (w.avg == null ? '—' : w.avg + ' / ' + w.max) + '</td>' +
+            '<td style="min-width:120px">' + (r == null ? '—' :
+              '<div class="bar ' + cls + '"><span style="width:' + r + '%"></span></div>' +
+              '<span class="bar-cap">' + r + '%</span>') + '</td>' +
+            '<td>' + w.xCount + '</td><td>' + w.belowCount + ' / ' + w.n + '</td></tr>';
+        }).join('') +
+        '</tbody></table></div>';
+
+      var recent = '<div class="card"><h3 class="sec-title">최근 점검 (' + d.recent.length + '건)</h3>' +
+        '<table class="mini"><thead><tr><th>점검일시</th><th>매장</th><th>점검자</th><th>총점</th><th>판정</th><th>상태</th><th></th></tr></thead><tbody>' +
+        (d.recent.length ? d.recent.map(function (i) {
+          return '<tr><td>' + esc(i.at) + '</td><td>' + esc(i.store) + '</td><td>' + esc(i.inspector) + '</td>' +
+            '<td>' + i.total + '</td>' +
+            '<td><span class="grade-badge ' + gradeClass(i.grade) + '">' + esc(i.grade || '—') + '</span>' +
+              (i.recheck ? ' <span class="recheck-badge">재</span>' : '') + '</td>' +
+            '<td>' + esc(i.status) + '</td>' +
+            '<td><button type="button" class="link-btn" data-id="' + esc(i.inspection_id) + '">상세</button></td></tr>';
+        }).join('') : '<tr><td colspan="7">조건에 맞는 점검이 없습니다.</td></tr>') +
+        '</tbody></table></div>';
+
+      root.innerHTML = tiles + warn + cards + weak + recent;
+
+      Array.prototype.forEach.call(root.querySelectorAll('.link-btn[data-id]'), function (b) {
+        b.addEventListener('click', function () { openDetail(b.dataset.id); });
+      });
+    }
+
+    /* ── 상세 모달 ──────────────────────────────────────── */
+    function openDetail(id) {
+      dmBody.innerHTML = '<div class="loading">불러오는 중…</div>';
+      modal.hidden = false;
+      MP.gs('getInspectionDetail', MP.token, id)
+        .then(function (d) {
+          var i = d.inspection;
+          var rows = d.scores.map(function (s) {
+            return '<tr' + (s.isX ? ' class="row-x"' : '') + '><td>' + s.no + '</td><td>' + esc(s.name) +
+              '</td><td>' + s.score + ' / ' + s.max + '</td><td>' + (s.isX ? 'X' : '') + '</td>' +
+              '<td>' + esc(s.reason) + '</td><td>' + esc(s.note) + '</td></tr>';
+          }).join('');
+          var photos = d.photos.length
+            ? '<div class="dm-photos">' + d.photos.map(function (p) {
+                return '<figure><img src="' + esc(p.url) + '" alt=""><figcaption>' + esc(p.kind) + '</figcaption></figure>';
+              }).join('') + '</div>'
+            : '';
+          var actions = d.under90Actions.length
+            ? '<div class="cl-actions" style="margin-top:12px"><h3 class="sec-title">90점 미만 — 후속 조치</h3><ol>' +
+              d.under90Actions.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ol></div>'
+            : '';
+          dmBody.innerHTML =
+            '<div class="dm-head">' +
+              '<h3>' + esc(i.store) + '</h3>' +
+              '<dl class="kv">' +
+                kv('점검일시', i.at) + kv('점검자', i.inspector + ' · ' + i.role) +
+                kv('점검 구분', i.round ? ('재점검 ' + i.round + '회차') : '최초 점검') +
+                kv('상태', i.status) +
+                kv('총점', '<b>' + i.total + '</b> / 100 &nbsp; <span class="grade-badge ' + gradeClass(i.grade) + '">' + esc(i.grade) + '</span>' + (i.recheck ? ' <span class="recheck-badge">재점검 필요</span>' : '')) +
+              '</dl>' +
+            '</div>' +
+            '<table class="mini"><thead><tr><th>#</th><th>항목</th><th>점수</th><th>X</th><th>사유</th><th>기타 특이점</th></tr></thead><tbody>' +
+            rows + '</tbody></table>' + actions + photos;
+        })
+        .catch(function (e) {
+          dmBody.innerHTML = '<div>불러오지 못했습니다: ' + esc(errText(e)) + '</div>';
+        });
+    }
+
+    function closeModal() { modal.hidden = true; dmBody.innerHTML = ''; }
+
+    /* ── 조각 ───────────────────────────────────────────── */
+    function tile(label, value, cls) {
+      return '<div class="tile ' + (cls || '') + '"><div class="t-label">' + label +
+        '</div><div class="t-value">' + value + '</div></div>';
+    }
+    function warnCol(title, list, chipCls) {
+      return '<div class="warn-col"><h4>' + title + ' <span class="warn-n">' + list.length + '</span></h4>' +
+        (list.length
+          ? list.map(function (c) {
+              return '<span class="chip ' + (chipCls || '') + '">' + esc(c.name) +
+                (c.lastTotal != null ? ' · ' + c.lastTotal + '점' : '') +
+                (title.indexOf('연속') > -1 ? ' · ' + c.under90Streak + '회' : '') + '</span>';
+            }).join('')
+          : '<span class="warn-none">없음</span>') +
+        '</div>';
+    }
+    function storeCard(c) {
+      var g = gradeClass(c.lastGrade);
+      return '<div class="store-card">' +
+        '<div class="sc-name">' + esc(c.name) + '</div>' +
+        '<div class="sc-score">' + (c.lastTotal == null ? '—' : c.lastTotal) + '</div>' +
+        '<div>' + (c.lastGrade ? '<span class="grade-badge ' + g + '">' + esc(c.lastGrade) + '</span>' : '') +
+          (c.lastRecheck ? ' <span class="recheck-badge">재</span>' : '') + '</div>' +
+        '<div class="sc-meta">' + (c.lastAt ? esc(c.lastAt) : '점검 기록 없음') +
+          ' · 평균 ' + (c.avg == null ? '—' : c.avg) + ' · ' + c.count + '건' +
+          (c.under90Streak >= 2 ? ' · 90미만 ' + c.under90Streak + '연속' : '') + '</div>' +
+        '</div>';
+    }
+    function opt(v, t) { var o = document.createElement('option'); o.value = v; o.textContent = t; return o; }
+    function kv(k, v) { return '<dt>' + k + '</dt><dd>' + v + '</dd>'; }
+  };
+
+  /* ── 공통 ───────────────────────────────────────────── */
+  function gradeClass(grade) {
+    if (grade === '우수' || grade === '양호') return 'g-ok';
+    if (grade === '관리 필요') return 'g-warn';
+    if (grade === '개선 필요') return 'g-danger';
+    return '';
+  }
+  function errText(e) { return e && e.message ? e.message : String(e); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
   }
 })();

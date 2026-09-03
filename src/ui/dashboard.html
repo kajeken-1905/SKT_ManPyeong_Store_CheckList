@@ -1,0 +1,200 @@
+<script>
+/* ────────────────────────────────────────────────────────────
+ *  결과 대시보드 (Phase 3)
+ * ──────────────────────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  window.initDashboardPage = function (MP) {
+    if (!MP || !MP.boot) return;
+    var root = document.getElementById('dashBody');
+    if (!root) return;
+
+    var elScope = document.getElementById('dashScope');
+    var dfFrom = document.getElementById('dfFrom');
+    var dfTo = document.getElementById('dfTo');
+    var dfStore = document.getElementById('dfStore');
+    var dfGrade = document.getElementById('dfGrade');
+    var dfStatus = document.getElementById('dfStatus');
+    var modal = document.getElementById('dashModal');
+    var dmBody = document.getElementById('dmBody');
+
+    /* 필터 옵션 */
+    MP.boot.stores.forEach(function (s) {
+      dfStore.appendChild(opt(s.store_id, s.name));
+    });
+    MP.boot.gradeRules.forEach(function (r) {
+      dfGrade.appendChild(opt(r.grade, r.grade));
+    });
+
+    document.getElementById('dfApply').addEventListener('click', load);
+    document.getElementById('dfReset').addEventListener('click', function () {
+      dfFrom.value = dfTo.value = dfStore.value = dfGrade.value = dfStatus.value = '';
+      load();
+    });
+    document.getElementById('dmClose').addEventListener('click', closeModal);
+    document.getElementById('dmPrint').addEventListener('click', function () { window.print(); });
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+
+    load();
+
+    /* ── 데이터 로드 ─────────────────────────────────────── */
+    function load() {
+      root.innerHTML = '<div class="loading">불러오는 중…</div>';
+      var filter = {
+        from: dfFrom.value || '', to: dfTo.value || '',
+        store_id: dfStore.value || '', grade: dfGrade.value || '',
+        status: dfStatus.value || ''
+      };
+      MP.gs('getDashboard', MP.token, filter)
+        .then(render)
+        .catch(function (e) {
+          root.innerHTML = '<div class="card">불러오지 못했습니다: ' + esc(errText(e)) + '</div>';
+        });
+    }
+
+    /* ── 렌더 ───────────────────────────────────────────── */
+    function render(d) {
+      elScope.textContent = '대상 범위: ' + d.scope + ' · 매장 ' + d.stores.length + '개';
+
+      var st = d.stat;
+      var tiles =
+        '<div class="tiles">' +
+          tile('제출 건수', st.submittedCount, '') +
+          tile('평균 점수', st.avgScore == null ? '—' : st.avgScore, '') +
+          tile('재점검 대상', st.recheckCount, st.recheckCount ? 'warn' : '') +
+          tile('90점 미만', st.under90Count, st.under90Count ? 'danger' : '') +
+          tile('2회 연속 미만', st.streak2Count, st.streak2Count ? 'danger' : '') +
+        '</div>';
+
+      var warn =
+        '<div class="card"><h3 class="sec-title">경고 대상 (현재 상태 기준)</h3><div class="warn-cols">' +
+          warnCol('재점검 대상', d.warnings.recheck, 'd') +
+          warnCol('90점 미만', d.warnings.under90, 'd') +
+          warnCol('2회 연속 90점 미만', d.warnings.streak2, 'd') +
+        '</div></div>';
+
+      var cards = '<div class="card"><h3 class="sec-title">매장별 현재 상태</h3><div class="store-grid">' +
+        d.storeCards.map(storeCard).join('') + '</div></div>';
+
+      var weak = '<div class="card"><h3 class="sec-title">항목별 취약점 (감점 많은 순)</h3>' +
+        '<table class="mini"><thead><tr><th>#</th><th>항목</th><th>평균</th><th>달성률</th><th>X</th><th>감점 건수</th></tr></thead><tbody>' +
+        d.itemWeakness.map(function (w) {
+          var r = w.ratio;
+          var cls = r == null ? '' : (r < 70 ? 'low' : (r < 90 ? 'mid' : ''));
+          return '<tr><td>' + w.no + '</td><td>' + esc(w.name) + '</td>' +
+            '<td>' + (w.avg == null ? '—' : w.avg + ' / ' + w.max) + '</td>' +
+            '<td style="min-width:120px">' + (r == null ? '—' :
+              '<div class="bar ' + cls + '"><span style="width:' + r + '%"></span></div>' +
+              '<span class="bar-cap">' + r + '%</span>') + '</td>' +
+            '<td>' + w.xCount + '</td><td>' + w.belowCount + ' / ' + w.n + '</td></tr>';
+        }).join('') +
+        '</tbody></table></div>';
+
+      var recent = '<div class="card"><h3 class="sec-title">최근 점검 (' + d.recent.length + '건)</h3>' +
+        '<table class="mini"><thead><tr><th>점검일시</th><th>매장</th><th>점검자</th><th>총점</th><th>판정</th><th>상태</th><th></th></tr></thead><tbody>' +
+        (d.recent.length ? d.recent.map(function (i) {
+          return '<tr><td>' + esc(i.at) + '</td><td>' + esc(i.store) + '</td><td>' + esc(i.inspector) + '</td>' +
+            '<td>' + i.total + '</td>' +
+            '<td><span class="grade-badge ' + gradeClass(i.grade) + '">' + esc(i.grade || '—') + '</span>' +
+              (i.recheck ? ' <span class="recheck-badge">재</span>' : '') + '</td>' +
+            '<td>' + esc(i.status) + '</td>' +
+            '<td><button type="button" class="link-btn" data-id="' + esc(i.inspection_id) + '">상세</button></td></tr>';
+        }).join('') : '<tr><td colspan="7">조건에 맞는 점검이 없습니다.</td></tr>') +
+        '</tbody></table></div>';
+
+      root.innerHTML = tiles + warn + cards + weak + recent;
+
+      Array.prototype.forEach.call(root.querySelectorAll('.link-btn[data-id]'), function (b) {
+        b.addEventListener('click', function () { openDetail(b.dataset.id); });
+      });
+    }
+
+    /* ── 상세 모달 ──────────────────────────────────────── */
+    function openDetail(id) {
+      dmBody.innerHTML = '<div class="loading">불러오는 중…</div>';
+      modal.hidden = false;
+      MP.gs('getInspectionDetail', MP.token, id)
+        .then(function (d) {
+          var i = d.inspection;
+          var rows = d.scores.map(function (s) {
+            return '<tr' + (s.isX ? ' class="row-x"' : '') + '><td>' + s.no + '</td><td>' + esc(s.name) +
+              '</td><td>' + s.score + ' / ' + s.max + '</td><td>' + (s.isX ? 'X' : '') + '</td>' +
+              '<td>' + esc(s.reason) + '</td><td>' + esc(s.note) + '</td></tr>';
+          }).join('');
+          var photos = d.photos.length
+            ? '<div class="dm-photos">' + d.photos.map(function (p) {
+                return '<figure><img src="' + esc(p.url) + '" alt=""><figcaption>' + esc(p.kind) + '</figcaption></figure>';
+              }).join('') + '</div>'
+            : '';
+          var actions = d.under90Actions.length
+            ? '<div class="cl-actions" style="margin-top:12px"><h3 class="sec-title">90점 미만 — 후속 조치</h3><ol>' +
+              d.under90Actions.map(function (a) { return '<li>' + esc(a) + '</li>'; }).join('') + '</ol></div>'
+            : '';
+          dmBody.innerHTML =
+            '<div class="dm-head">' +
+              '<h3>' + esc(i.store) + '</h3>' +
+              '<dl class="kv">' +
+                kv('점검일시', i.at) + kv('점검자', i.inspector + ' · ' + i.role) +
+                kv('점검 구분', i.round ? ('재점검 ' + i.round + '회차') : '최초 점검') +
+                kv('상태', i.status) +
+                kv('총점', '<b>' + i.total + '</b> / 100 &nbsp; <span class="grade-badge ' + gradeClass(i.grade) + '">' + esc(i.grade) + '</span>' + (i.recheck ? ' <span class="recheck-badge">재점검 필요</span>' : '')) +
+              '</dl>' +
+            '</div>' +
+            '<table class="mini"><thead><tr><th>#</th><th>항목</th><th>점수</th><th>X</th><th>사유</th><th>기타 특이점</th></tr></thead><tbody>' +
+            rows + '</tbody></table>' + actions + photos;
+        })
+        .catch(function (e) {
+          dmBody.innerHTML = '<div>불러오지 못했습니다: ' + esc(errText(e)) + '</div>';
+        });
+    }
+
+    function closeModal() { modal.hidden = true; dmBody.innerHTML = ''; }
+
+    /* ── 조각 ───────────────────────────────────────────── */
+    function tile(label, value, cls) {
+      return '<div class="tile ' + (cls || '') + '"><div class="t-label">' + label +
+        '</div><div class="t-value">' + value + '</div></div>';
+    }
+    function warnCol(title, list, chipCls) {
+      return '<div class="warn-col"><h4>' + title + ' <span class="warn-n">' + list.length + '</span></h4>' +
+        (list.length
+          ? list.map(function (c) {
+              return '<span class="chip ' + (chipCls || '') + '">' + esc(c.name) +
+                (c.lastTotal != null ? ' · ' + c.lastTotal + '점' : '') +
+                (title.indexOf('연속') > -1 ? ' · ' + c.under90Streak + '회' : '') + '</span>';
+            }).join('')
+          : '<span class="warn-none">없음</span>') +
+        '</div>';
+    }
+    function storeCard(c) {
+      var g = gradeClass(c.lastGrade);
+      return '<div class="store-card">' +
+        '<div class="sc-name">' + esc(c.name) + '</div>' +
+        '<div class="sc-score">' + (c.lastTotal == null ? '—' : c.lastTotal) + '</div>' +
+        '<div>' + (c.lastGrade ? '<span class="grade-badge ' + g + '">' + esc(c.lastGrade) + '</span>' : '') +
+          (c.lastRecheck ? ' <span class="recheck-badge">재</span>' : '') + '</div>' +
+        '<div class="sc-meta">' + (c.lastAt ? esc(c.lastAt) : '점검 기록 없음') +
+          ' · 평균 ' + (c.avg == null ? '—' : c.avg) + ' · ' + c.count + '건' +
+          (c.under90Streak >= 2 ? ' · 90미만 ' + c.under90Streak + '연속' : '') + '</div>' +
+        '</div>';
+    }
+    function opt(v, t) { var o = document.createElement('option'); o.value = v; o.textContent = t; return o; }
+    function kv(k, v) { return '<dt>' + k + '</dt><dd>' + v + '</dd>'; }
+  };
+
+  /* ── 공통 ───────────────────────────────────────────── */
+  function gradeClass(grade) {
+    if (grade === '우수' || grade === '양호') return 'g-ok';
+    if (grade === '관리 필요') return 'g-warn';
+    if (grade === '개선 필요') return 'g-danger';
+    return '';
+  }
+  function errText(e) { return e && e.message ? e.message : String(e); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+})();
+</script>

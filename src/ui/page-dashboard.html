@@ -1,23 +1,43 @@
 <template id="tpl-dashboard">
   <div class="page-head">
     <h2>결과 대시보드</h2>
-    <p>전체 매장의 최근 점검 현황과 재점검 · 경고 대상을 한눈에 봅니다.</p>
+    <p id="dashScope">—</p>
   </div>
 
-  <div class="card">
-    <div class="placeholder">
-      <span class="badge">Phase 3 예정</span>
-      <p>이 페이지에서 구현될 기능:</p>
-      <table class="mini">
-        <thead><tr><th>구분</th><th>내용</th></tr></thead>
-        <tbody>
-          <tr><td>최근 점검 목록</td><td>기간 · 매장 · 판정 필터</td></tr>
-          <tr><td>매장별 상태 카드</td><td>최근 점수 · 판정 · 재점검 여부</td></tr>
-          <tr><td>경고 리스트</td><td>재점검 대상 / 90점 미만 / 2회 연속 미만</td></tr>
-          <tr><td>취약점 분석</td><td>항목별 감점 빈도</td></tr>
-          <tr><td>상세 보고서</td><td>점검 1건 상세 + 인쇄/PDF</td></tr>
-        </tbody>
-      </table>
+  <div class="card dash-filter">
+    <label class="fld"><span class="fld-label">시작일</span><input type="date" id="dfFrom"></label>
+    <label class="fld"><span class="fld-label">종료일</span><input type="date" id="dfTo"></label>
+    <label class="fld"><span class="fld-label">매장</span>
+      <select id="dfStore"><option value="">전체</option></select>
+    </label>
+    <label class="fld"><span class="fld-label">판정</span>
+      <select id="dfGrade"><option value="">전체</option></select>
+    </label>
+    <label class="fld"><span class="fld-label">상태</span>
+      <select id="dfStatus">
+        <option value="">전체</option>
+        <option value="제출">제출</option>
+        <option value="임시저장">임시저장</option>
+      </select>
+    </label>
+    <div class="dash-filter-btns">
+      <button type="button" id="dfApply" class="btn">조회</button>
+      <button type="button" id="dfReset" class="btn btn-ghost">초기화</button>
+    </div>
+  </div>
+
+  <div id="dashBody"><div class="loading">불러오는 중…</div></div>
+
+  <div id="dashModal" class="modal" hidden>
+    <div class="modal-box">
+      <div class="modal-head no-print">
+        <strong>점검 상세</strong>
+        <span>
+          <button type="button" id="dmPrint" class="btn btn-ghost">인쇄 / PDF</button>
+          <button type="button" id="dmClose" class="btn btn-ghost">닫기</button>
+        </span>
+      </div>
+      <div id="dmBody"></div>
     </div>
   </div>
 </template>

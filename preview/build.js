@@ -23,6 +23,7 @@ const includes = {
   "ui/page-stores": read(path.join(UI, 'page-stores.html')),
   "ui/pages": read(path.join(UI, 'pages.html')),
   "ui/checklist": read(path.join(UI, 'checklist.html')),
+  "ui/dashboard": read(path.join(UI, 'dashboard.html')),
   "ui/app": read(path.join(UI, 'app.html')),
 };
 
@@ -100,6 +101,68 @@ const MOCK = `
       email: 'dev+' + role + '@example.com', canSeeAllStores: all };
   }
 
+  function mkDashboard(vis, scopeLabel, filter) {
+    filter = filter || {};
+    var today = new Date();
+    function day(off) { var x = new Date(today); x.setDate(x.getDate() - off); return x.toISOString().slice(0, 10); }
+    var seqs = [[94,91,96],[92,90,93],[96,95,98],[88,91,90],[97,96,95],[91,93,89],[83,86,79]];
+    var allIns = [];
+    vis.forEach(function (s, idx) {
+      (seqs[idx % seqs.length]).forEach(function (total, k) {
+        var grade = total >= 95 ? '우수' : total >= 90 ? '양호' : total >= 85 ? '관리 필요' : '개선 필요';
+        allIns.push({
+          inspection_id: 'INS_' + s.store_id + '_' + k,
+          store_id: s.store_id, store: s.name, team: s.team,
+          at: day(k * 7) + ' 14:30',
+          inspector: '[개발]' + (s.team === '함께팀' ? '정시영' : '정수빈'), role: '그룹장',
+          total: total, grade: grade, recheck: total < 90, round: 0, under90: total < 90, status: '제출'
+        });
+      });
+    });
+    allIns.sort(function (a, b) { return a.at < b.at ? 1 : -1; });
+
+    var storeCards = vis.map(function (s) {
+      var list = allIns.filter(function (i) { return i.store_id === s.store_id; });
+      var last = list[0];
+      var streak = 0;
+      for (var k = 0; k < list.length; k++) { if (list[k].under90) streak++; else break; }
+      var avg = list.length ? Math.round(list.reduce(function (t, x) { return t + x.total; }, 0) / list.length * 10) / 10 : null;
+      return {
+        store_id: s.store_id, name: s.name, team: s.team, count: list.length, avg: avg,
+        lastAt: last ? last.at : '', lastTotal: last ? last.total : null, lastGrade: last ? last.grade : '',
+        lastRecheck: last ? last.recheck : false, lastUnder90: last ? last.under90 : false, under90Streak: streak
+      };
+    });
+    var warnings = {
+      recheck: storeCards.filter(function (c) { return c.lastRecheck; }),
+      under90: storeCards.filter(function (c) { return c.lastUnder90; }),
+      streak2: storeCards.filter(function (c) { return c.under90Streak >= 2; })
+    };
+    var fSub = allIns.slice();
+    if (filter.store_id) fSub = fSub.filter(function (i) { return i.store_id === filter.store_id; });
+    if (filter.grade) fSub = fSub.filter(function (i) { return i.grade === filter.grade; });
+    if (filter.status) fSub = fSub.filter(function (i) { return i.status === filter.status; });
+    var stat = {
+      submittedCount: fSub.length,
+      avgScore: fSub.length ? Math.round(fSub.reduce(function (t, x) { return t + x.total; }, 0) / fSub.length * 10) / 10 : null,
+      recheckCount: warnings.recheck.length, under90Count: warnings.under90.length, streak2Count: warnings.streak2.length
+    };
+    var itemWeakness = ITEMS.map(function (it, idx) {
+      var avg = Math.round(Math.max(0, it.max - (idx % 3 === 0 ? 2.5 : idx % 3 === 1 ? 1 : 0.3)) * 10) / 10;
+      return {
+        item_id: it.item_id, no: it.no, name: it.name, max: it.max,
+        avg: avg, ratio: Math.round(avg / it.max * 100),
+        xCount: idx % 4 === 0 ? 2 : 0, belowCount: idx % 2, n: fSub.length
+      };
+    }).sort(function (a, b) { return a.ratio - b.ratio; });
+
+    return {
+      scope: scopeLabel, stores: vis, grades: ['우수', '양호', '관리 필요', '개선 필요'],
+      stat: stat, warnings: warnings, storeCards: storeCards, itemWeakness: itemWeakness,
+      recent: fSub.slice(0, 100)
+    };
+  }
+
   var API = {
     getAuthConfig: function () { return { devMode: true, googleClientId: '', ready: true }; },
     devLogin: function (role) {
@@ -115,6 +178,36 @@ const MOCK = `
         user: u, stores: stores, items: ITEMS, gradeRules: GRADE_RULES,
         under90Actions: ACTIONS, maxTotal: 100, criticalXThreshold: 2,
         serverTime: new Date().toISOString().slice(0, 19)
+      };
+    },
+    getDashboard: function (token, filter) {
+      var role = String(token).split('.')[1] || '그룹장';
+      var u = userFor(role);
+      var vis = u.canSeeAllStores ? STORES : STORES.filter(function (s) { return s.team === u.team; });
+      return mkDashboard(vis, u.canSeeAllStores ? '전체 매장' : u.team, filter || {});
+    },
+    getInspectionDetail: function (token, id) {
+      var parts = String(id).split('_');
+      var storeId = parts[1], k = Number(parts[2]) || 0;
+      var s = STORES.filter(function (x) { return x.store_id === storeId; })[0] || STORES[0];
+      var totals = [94, 91, 96, 88, 92, 90];
+      var total = totals[k % totals.length] || 88;
+      var grade = total >= 95 ? '우수' : total >= 90 ? '양호' : total >= 85 ? '관리 필요' : '개선 필요';
+      var scores = ITEMS.map(function (it, idx) {
+        var sc = Math.max(0, it.max - (idx === 0 ? 4 : idx === 2 ? 2 : 0));
+        return {
+          item_id: it.item_id, no: it.no, name: it.name, max: it.max, score: sc,
+          isX: idx === 2, reason: idx === 0 ? '개인물품 정리 미흡' : '', note: ''
+        };
+      });
+      return {
+        inspection: {
+          inspection_id: id, store: s.name, store_id: storeId,
+          at: new Date().toISOString().slice(0, 10) + ' 14:30', inspector: '[개발]점검자', role: '그룹장',
+          total: total, grade: grade, recheck: total < 90, round: 0, under90: total < 90,
+          status: '제출', createdAt: new Date().toISOString().slice(0, 16).replace('T', ' ')
+        },
+        scores: scores, photos: [], under90Actions: total < 90 ? ACTIONS.slice() : []
       };
     },
     saveInspection: function (token, payload) {
@@ -177,6 +270,14 @@ const MOCK = `
 
 html = html.replace(includes['ui/pages'], MOCK + includes['ui/pages']);
 
+// 스크립트 태그 짝 검증 (include 파일에서 </script> 누락 시 조기 발견)
+var openCount = (html.match(/<script\b/g) || []).length;
+var closeCount = (html.match(/<\/script>/g) || []).length;
+if (openCount !== closeCount) {
+  throw new Error('<script> 태그 불균형: 열림 ' + openCount + ' / 닫힘 ' + closeCount +
+    ' — src/ui/*.html 중 하나에 </script> 가 빠졌을 수 있음');
+}
+
 const out = path.join(__dirname, 'index.html');
 fs.writeFileSync(out, html, 'utf8');
-console.log('생성됨:', path.relative(ROOT, out));
+console.log('생성됨:', path.relative(ROOT, out), '(script 태그 ' + openCount + '쌍)');
