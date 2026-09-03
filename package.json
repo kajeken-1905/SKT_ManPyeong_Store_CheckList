@@ -4,6 +4,7 @@
   "private": true,
   "description": "SK텔레콤 대구만평대리점 매장 점검 체크리스트 웹앱 (Google Apps Script + Sheets)",
   "scripts": {
+    "preview": "node preview/build.js",
     "login": "clasp login",
     "create": "clasp create --type webapp --title \"만평대리점_체크리스트\" --rootDir ./src",
     "push": "clasp push",

@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <style>
+  :root {
+    --green: #7aa84f;
+    --green-dark: #5f8a3a;
+    --bg: #f4f5f2;
+    --card: #ffffff;
+    --line: #d9ddd3;
+    --text: #23271f;
+    --muted: #6b7264;
+    --danger: #c0392b;
+    --warn: #d99a00;
+    --ok: #2e7d32;
+    --radius: 10px;
+    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 6px 20px rgba(0,0,0,.04);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic",
+      "Noto Sans KR", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+  [hidden] { display: none !important; }
+  a { color: inherit; text-decoration: none; }
+
+  .btn {
+    appearance: none;
+    border: 1px solid var(--green-dark);
+    background: var(--green);
+    color: #fff;
+    font: inherit;
+    font-weight: 600;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: filter .15s;
+  }
+  .btn:hover { filter: brightness(1.05); }
+  .btn:active { filter: brightness(.95); }
+  .btn-ghost {
+    background: transparent;
+    color: var(--muted);
+    border-color: var(--line);
+  }
+
+  /* ── 로그인 ── */
+  .login-view {
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+  .login-card {
+    width: 100%;
+    max-width: 380px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 32px 28px;
+    text-align: center;
+  }
+  .login-title {
+    font-size: 20px;
+    margin: 0 0 6px;
+    color: var(--green-dark);
+    line-height: 1.35;
+  }
+  .login-sub { margin: 0 0 24px; color: var(--muted); font-size: 13px; }
+  .google-btn-wrap { display: flex; justify-content: center; min-height: 44px; }
+  .dev-login { margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line); }
+  .dev-label { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
+  .dev-btns { display: flex; gap: 8px; justify-content: center; }
+  .dev-btns .btn { flex: 1; padding: 10px 8px; }
+  .login-msg { margin: 16px 0 0; color: var(--danger); font-size: 13px; white-space: pre-line; min-height: 18px; }
+
+  /* ── 상단바 ── */
+  .topbar {
+    background: var(--card);
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 16px;
+    height: 56px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    flex-wrap: wrap;
+  }
+  .brand { font-weight: 700; color: var(--green-dark); white-space: nowrap; }
+  .tabs { display: flex; gap: 4px; flex: 1; overflow-x: auto; }
+  .tabs a {
+    padding: 8px 14px;
+    border-radius: 8px;
+    color: var(--muted);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .tabs a.active { background: var(--green); color: #fff; }
+  .user-box { display: flex; align-items: center; gap: 10px; }
+  .user-label { font-size: 13px; color: var(--muted); white-space: nowrap; }
+
+  /* ── 본문 ── */
+  .content { max-width: 1000px; margin: 0 auto; padding: 20px 16px 60px; }
+  .loading { color: var(--muted); padding: 40px 0; text-align: center; }
+
+  .page-head { margin: 0 0 16px; }
+  .page-head h2 { margin: 0 0 4px; font-size: 18px; }
+  .page-head p { margin: 0; color: var(--muted); font-size: 13px; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 20px;
+    margin-bottom: 16px;
+  }
+  .placeholder {
+    text-align: center;
+    color: var(--muted);
+    padding: 48px 20px;
+    border: 2px dashed var(--line);
+    border-radius: var(--radius);
+  }
+  .placeholder .badge {
+    display: inline-block;
+    background: var(--green);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 999px;
+    margin-bottom: 12px;
+  }
+  .kv { display: grid; grid-template-columns: 120px 1fr; gap: 6px 12px; font-size: 14px; }
+  .kv dt { color: var(--muted); }
+  .kv dd { margin: 0; }
+
+  table.mini { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  table.mini th, table.mini td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; }
+  table.mini th { background: #eef1ea; }
+
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    background: #23271f;
+    color: #fff;
+    padding: 10px 18px;
+    border-radius: 999px;
+    font-size: 13px;
+    box-shadow: var(--shadow);
+    z-index: 50;
+  }
+
+  @media (max-width: 640px) {
+    .topbar { height: auto; padding: 8px 12px; }
+    .brand { width: 100%; }
+    .user-box { width: 100%; justify-content: space-between; }
+    .content { padding: 16px 12px 48px; }
+  }
+</style>
+
+</head>
+<body>
+  <!-- 로그인 화면 -->
+  <section id="loginView" class="login-view">
+    <div class="login-card">
+      <h1 class="login-title">만평대리점<br>매장 점검 체크리스트</h1>
+      <p class="login-sub">그룹장 · 총괄 · 대표 전용</p>
+
+      <div id="googleBtnWrap" class="google-btn-wrap" hidden></div>
+
+      <div id="devLoginWrap" class="dev-login" hidden>
+        <p class="dev-label">개발용 임시 로그인</p>
+        <div class="dev-btns">
+          <button class="btn" data-role="그룹장">그룹장</button>
+          <button class="btn" data-role="총괄">총괄</button>
+          <button class="btn" data-role="대표">대표</button>
+        </div>
+      </div>
+
+      <p id="loginMsg" class="login-msg" role="alert"></p>
+    </div>
+  </section>
+
+  <!-- 앱 본체 -->
+  <div id="appView" class="app-view" hidden>
+    <header class="topbar">
+      <div class="brand">만평대리점 점검</div>
+      <nav class="tabs">
+        <a href="#/checklist" data-tab="checklist">체크리스트 작성</a>
+        <a href="#/dashboard" data-tab="dashboard">결과 대시보드</a>
+        <a href="#/stores" data-tab="stores">매장별 관리</a>
+      </nav>
+      <div class="user-box">
+        <span id="userLabel" class="user-label"></span>
+        <button id="logoutBtn" class="btn btn-ghost">로그아웃</button>
+      </div>
+    </header>
+
+    <main id="content" class="content">
+      <div class="loading">불러오는 중…</div>
+    </main>
+
+    <div id="pageTemplates" hidden>
+      <template id="tpl-checklist">
+  <div class="page-head">
+    <h2>체크리스트 작성</h2>
+    <p>매장을 방문해 10개 항목을 점검하고 총점·판정을 기록합니다.</p>
+  </div>
+
+  <div class="card">
+    <div class="placeholder">
+      <span class="badge">Phase 2 예정</span>
+      <p>이 페이지에서 구현될 기능:</p>
+      <table class="mini" id="checklistPlanTable">
+        <thead><tr><th>구분</th><th>내용</th></tr></thead>
+        <tbody>
+          <tr><td>헤더</td><td>매장 선택 · 점검일시(자동) · 점검자(로그인 사용자)</td></tr>
+          <tr><td>항목 입력</td><td>10개 항목 점수 · 사유 · 기타 특이점 · 중요결함(X)</td></tr>
+          <tr><td>실시간 판정</td><td>총점, 우수/양호/관리필요/개선필요, 재점검 필요 여부</td></tr>
+          <tr><td>90점 미만 안내</td><td>후속 조치 3가지 자동 노출</td></tr>
+          <tr><td>사진</td><td>개선 전/후 사진 업로드(Drive 저장)</td></tr>
+          <tr><td>저장</td><td>임시저장 / 제출</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card" id="bootInfoCard">
+    <strong>로그인/데이터 연결 확인용 정보</strong>
+    <dl class="kv" id="bootInfo" style="margin-top:10px;"></dl>
+  </div>
+</template>
+
+      <template id="tpl-dashboard">
+  <div class="page-head">
+    <h2>결과 대시보드</h2>
+    <p>전체 매장의 최근 점검 현황과 재점검 · 경고 대상을 한눈에 봅니다.</p>
+  </div>
+
+  <div class="card">
+    <div class="placeholder">
+      <span class="badge">Phase 3 예정</span>
+      <p>이 페이지에서 구현될 기능:</p>
+      <table class="mini">
+        <thead><tr><th>구분</th><th>내용</th></tr></thead>
+        <tbody>
+          <tr><td>최근 점검 목록</td><td>기간 · 매장 · 판정 필터</td></tr>
+          <tr><td>매장별 상태 카드</td><td>최근 점수 · 판정 · 재점검 여부</td></tr>
+          <tr><td>경고 리스트</td><td>재점검 대상 / 90점 미만 / 2회 연속 미만</td></tr>
+          <tr><td>취약점 분석</td><td>항목별 감점 빈도</td></tr>
+          <tr><td>상세 보고서</td><td>점검 1건 상세 + 인쇄/PDF</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</template>
+
+      <template id="tpl-stores">
+  <div class="page-head">
+    <h2>매장별 종합 관리</h2>
+    <p>매장을 선택해 일 / 주 / 월 / 연 단위 누적 점수와 이력을 관리합니다.</p>
+  </div>
+
+  <div class="card">
+    <div class="placeholder">
+      <span class="badge">Phase 4 예정</span>
+      <p>이 페이지에서 구현될 기능:</p>
+      <table class="mini">
+        <thead><tr><th>구분</th><th>내용</th></tr></thead>
+        <tbody>
+          <tr><td>기간 탭</td><td>일 / 주 / 월 / 연</td></tr>
+          <tr><td>추이 그래프</td><td>기간별 점수 변화</td></tr>
+          <tr><td>누적 점수</td><td>평균 · 최저, 재점검 횟수, 90점 미만 연속 횟수</td></tr>
+          <tr><td>이력</td><td>재점검 · VD 수수료 재정산 대상 이력</td></tr>
+          <tr><td>내보내기</td><td>엑셀 / PDF</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <strong>접근 가능 매장</strong>
+    <table class="mini" id="storeList" style="margin-top:10px;">
+      <thead><tr><th>매장코드</th><th>매장명</th><th>팀</th><th>그룹장</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+</template>
+
+    </div>
+  </div>
+
+  <script>
+    window.__BUILD__ = { appName: '만평대리점 매장 점검 체크리스트', devMode: true, googleClientId: '' };
+  </script>
+  
+<style>
+  body { padding-top: 26px; }
+  #mpPreviewBanner {
+    position: fixed; left: 0; right: 0; top: 0; z-index: 9999;
+    background: #d99a00; color: #23271f;
+    font: 600 12px/1.6 -apple-system, sans-serif; text-align: center; padding: 4px 8px;
+  }
+</style>
+<div id="mpPreviewBanner">미리보기 (목업 데이터) · 실제 배포본 아님 · Google 로그인/저장 불가</div>
+<script>
+(function () {
+  var STORES = [
+    ['D333040044','대구만평대리점 성서점','함께팀','정시영'],
+    ['D333040047','대구만평대리점 태전점','멀리팀','정수빈'],
+    ['D333040050','대구만평대리점 동천점','함께팀','정시영'],
+    ['D333040054','대구만평대리점 본점','멀리팀','정수빈'],
+    ['D333040058','대구만평대리점 화원점','함께팀','정시영'],
+    ['D333040062','대구만평대리점 사월점','멀리팀','정수빈'],
+    ['D333040066','대구만평대리점 용지점','멀리팀','정수빈'],
+    ['D333040067','대구만평대리점 지산점','멀리팀','정수빈'],
+    ['D333040069','대구만평대리점 신월성점','함께팀','정시영'],
+    ['D333040071','대구만평대리점 경산점','함께팀','정시영'],
+    ['D333040072','대구만평대리점 이시아점','함께팀','정시영'],
+    ['D333040073','대구만평대리점 수성점','멀리팀','정수빈'],
+    ['D333040075','대구만평대리점 구암점','멀리팀','정수빈'],
+    ['D333040076','대구만평대리점 장기점','함께팀','정시영']
+  ].map(function (r) { return { store_id: r[0], name: r[1], team: r[2], leader: r[3], head: '신동훈' }; });
+
+  var ITEMS = [
+    ['Q1',1,20,true,'고객 상담석의 청결 및 정리정돈 상태','오염정도, 개인물품 등의 정리 상태, 업무용 기기 및 책자·팜플렛 정리 상태 등'],
+    ['Q2',2,10,true,'매장 외부 기초 청소 상태 점검',''],
+    ['Q3',3,10,true,'매장 내부 기초 청소 상태 점검',''],
+    ['Q4',4,10,true,'출입문 및 유리창의 관리상태',''],
+    ['Q5',5,10,true,'VMD, 손글씨, 현수막 상태 점검','너덜너덜한 VMD 상태 및 포스터 찢어짐, 오염 등'],
+    ['Q6',6,10,true,'고객 대기 공간의 청결 상태','대기 공간 전체의 청결 및 정리정돈 상태'],
+    ['Q7',7,10,true,'매장 내부 가구 상태 점검','악세사리장, 쓰레기통, 수납장 등'],
+    ['Q8',8,5,true,'근무자 모두의 복장 및 용모','유니폼, 신발 등'],
+    ['Q9',9,10,true,'단말기 시연 매대 관리','청결, 시연폰 관리'],
+    ['Q10',10,5,true,'정수기, 공기청정기 및 냉난방기 등 편의 시설의 관리','']
+  ].map(function (r) { return { item_id: r[0], no: r[1], max: r[2], critical: r[3], name: r[4], desc: r[5] }; });
+
+  var GRADE_RULES = [
+    { min: 95, grade: '우수', recheck: false },
+    { min: 90, grade: '양호', recheck: false },
+    { min: 85, grade: '관리 필요', recheck: true },
+    { min: 0,  grade: '개선 필요', recheck: true }
+  ];
+  var ACTIONS = [
+    '24시간 내 밴드 댓글로 개선 사진 제출 [전/후 사진 제출]',
+    '다음주 즉시 재점검',
+    '2회 연속 90점 미만 매장은 해당 분기 VD 수수료 50% 재정산'
+  ];
+
+  function userFor(role) {
+    var team = role === '그룹장' ? '함께팀' : '전체';
+    var all = (role === '총괄' || role === '대표');
+    return { uid: 'DEV_' + role, name: '[개발]' + role, role: role, team: team,
+      email: 'dev+' + role + '@example.com', canSeeAllStores: all };
+  }
+
+  var API = {
+    getAuthConfig: function () { return { devMode: true, googleClientId: '', ready: true }; },
+    devLogin: function (role) {
+      if (['그룹장','총괄','대표'].indexOf(role) < 0) throw new Error('알 수 없는 역할: ' + role);
+      return { token: 'mock.' + role, user: userFor(role) };
+    },
+    login: function () { throw new Error('미리보기에서는 Google 로그인을 쓸 수 없습니다.'); },
+    getBootstrap: function (token) {
+      var role = String(token).split('.')[1] || '그룹장';
+      var u = userFor(role);
+      var stores = u.canSeeAllStores ? STORES : STORES.filter(function (s) { return s.team === u.team; });
+      return {
+        user: u, stores: stores, items: ITEMS, gradeRules: GRADE_RULES,
+        under90Actions: ACTIONS, maxTotal: 100, criticalXThreshold: 2,
+        serverTime: new Date().toISOString().slice(0, 19)
+      };
+    },
+    previewEvaluation: function (token, entries) {
+      var map = {}; ITEMS.forEach(function (i) { map[i.item_id] = i; });
+      var total = 0, cx = 0, breakdown = [];
+      (entries || []).forEach(function (e) {
+        var it = map[e.item_id]; if (!it) return;
+        var s = Math.max(0, Math.min(Number(e.score) || 0, it.max));
+        total += s;
+        var isX = e.isX === true;
+        if (isX && it.critical) cx++;
+        breakdown.push({ item_id: it.id, no: it.no, name: it.name, max: it.max, score: s, isX: isX, critical: it.critical });
+      });
+      total = Math.round(total * 10) / 10;
+      var rule = GRADE_RULES.filter(function (r) { return total >= r.min; })[0];
+      return {
+        total: total, grade: rule.grade,
+        needRecheck: rule.recheck || cx >= 2, under90: total < 90,
+        criticalXCount: cx, actions: total < 90 ? ACTIONS.slice() : [], breakdown: breakdown
+      };
+    }
+  };
+
+  function makeRunner() {
+    var ok = null, fail = null;
+    var runner = {
+      withSuccessHandler: function (fn) { ok = fn; return runner; },
+      withFailureHandler: function (fn) { fail = fn; return runner; }
+    };
+    Object.keys(API).forEach(function (name) {
+      runner[name] = function () {
+        var args = arguments;
+        setTimeout(function () {
+          try { var r = API[name].apply(null, args); ok && ok(r); }
+          catch (e) { fail && fail(e); }
+        }, 100);
+      };
+    });
+    return runner;
+  }
+
+  window.google = window.google || {};
+  window.google.script = {};
+  Object.defineProperty(window.google.script, 'run', { get: makeRunner });
+})();
+</script>
+<script>
+/* 페이지별 초기화 훅 (Phase 1: 연결 확인용 최소 구현) */
+
+function initChecklistPage(MP) {
+  if (!MP || !MP.boot) return;
+  var dl = document.getElementById('bootInfo');
+  if (!dl) return;
+  var b = MP.boot, u = MP.user;
+  var rows = [
+    ['로그인 사용자', u.name + ' (' + u.role + ')'],
+    ['이메일', u.email || '(미등록 · 개발 로그인)'],
+    ['담당', u.canSeeAllStores ? '전체 매장' : u.team],
+    ['접근 가능 매장 수', String(b.stores.length) + '개'],
+    ['점검 항목 수', String(b.items.length) + '개 / 만점 ' + b.maxTotal + '점'],
+    ['서버 시각', b.serverTime]
+  ];
+  dl.innerHTML = rows.map(function (r) {
+    return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>';
+  }).join('');
+}
+
+function initStoresPage(MP) {
+  if (!MP || !MP.boot) return;
+  var tbody = document.querySelector('#storeList tbody');
+  if (!tbody) return;
+  tbody.innerHTML = MP.boot.stores.map(function (s) {
+    return '<tr><td>' + s.store_id + '</td><td>' + s.name +
+      '</td><td>' + s.team + '</td><td>' + s.leader + '</td></tr>';
+  }).join('') || '<tr><td colspan="4">표시할 매장이 없습니다.</td></tr>';
+}
+
+function initDashboardPage(MP) {
+  /* Phase 3 에서 구현 */
+}
+</script>
+
+  <script>
+/* ────────────────────────────────────────────────────────────
+ *  만평대리점 체크리스트 — 클라이언트 앱 셸 (Phase 1)
+ * ──────────────────────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  var SESSION_KEY = 'mp_session';
+  var state = { token: null, user: null, boot: null };
+
+  /* google.script.run → Promise 래퍼 */
+  function gs(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      var runner = google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(function (err) { reject(err); });
+      runner[fn].apply(runner, args);
+    });
+  }
+
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+  function toast(msg) {
+    var t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 2600);
+  }
+
+  function saveSession(token) {
+    state.token = token;
+    try { sessionStorage.setItem(SESSION_KEY, token); } catch (e) {}
+  }
+  function loadSession() {
+    try { return sessionStorage.getItem(SESSION_KEY); } catch (e) { return null; }
+  }
+  function clearSession() {
+    state.token = null;
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+  }
+
+  /* ── 로그인 화면 ───────────────────────────────────────── */
+
+  function showLogin(msg) {
+    $('#appView').hidden = true;
+    $('#loginView').hidden = false;
+    if (msg) $('#loginMsg').textContent = msg;
+
+    var cfg = window.__BUILD__ || {};
+
+    // 개발용 임시 로그인
+    if (cfg.devMode) {
+      var wrap = $('#devLoginWrap');
+      wrap.hidden = false;
+      $all('.dev-btns .btn', wrap).forEach(function (b) {
+        b.onclick = function () {
+          $('#loginMsg').textContent = '';
+          gs('devLogin', b.dataset.role)
+            .then(onLoggedIn)
+            .catch(function (e) { $('#loginMsg').textContent = errText(e); });
+        };
+      });
+    }
+
+    // Google 로그인 (클라이언트 ID 있을 때만)
+    if (cfg.googleClientId) {
+      loadGis(cfg.googleClientId);
+    } else if (!cfg.devMode) {
+      $('#loginMsg').textContent =
+        '로그인 수단이 설정되지 않았습니다.\n서버에 GOOGLE_CLIENT_ID 를 설정하거나 DEV_MODE 를 켜세요.';
+    }
+  }
+
+  function loadGis(clientId) {
+    var wrap = $('#googleBtnWrap');
+    wrap.hidden = false;
+    if (window.google && google.accounts && google.accounts.id) {
+      renderGis(clientId);
+      return;
+    }
+    var s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true;
+    s.defer = true;
+    s.onload = function () { renderGis(clientId); };
+    s.onerror = function () { $('#loginMsg').textContent = 'Google 로그인 스크립트를 불러오지 못했습니다.'; };
+    document.head.appendChild(s);
+  }
+
+  function renderGis(clientId) {
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: function (resp) {
+        $('#loginMsg').textContent = '';
+        gs('login', resp.credential)
+          .then(onLoggedIn)
+          .catch(function (e) { $('#loginMsg').textContent = errText(e); });
+      }
+    });
+    google.accounts.id.renderButton($('#googleBtnWrap'), {
+      theme: 'outline', size: 'large', text: 'signin_with', locale: 'ko'
+    });
+  }
+
+  function errText(e) {
+    if (!e) return '알 수 없는 오류';
+    return e.message || String(e);
+  }
+
+  /* ── 로그인 성공 → 부트스트랩 ───────────────────────────── */
+
+  function onLoggedIn(res) {
+    saveSession(res.token);
+    boot();
+  }
+
+  function boot() {
+    var token = state.token || loadSession();
+    if (!token) { showLogin(); return; }
+    state.token = token;
+
+    gs('getBootstrap', token)
+      .then(function (data) {
+        state.boot = data;
+        state.user = data.user;
+        window.MP = { boot: data, user: data.user, gs: gs, toast: toast, token: token };
+        renderApp();
+      })
+      .catch(function (e) {
+        clearSession();
+        showLogin(errText(e));
+      });
+  }
+
+  /* ── 앱 셸 ─────────────────────────────────────────────── */
+
+  function renderApp() {
+    $('#loginView').hidden = true;
+    $('#appView').hidden = false;
+
+    var u = state.user;
+    $('#userLabel').textContent = u.name + ' · ' + u.role +
+      (u.canSeeAllStores ? ' (전체)' : ' (' + u.team + ')');
+
+    $('#logoutBtn').onclick = function () {
+      clearSession();
+      location.hash = '';
+      location.reload();
+    };
+
+    window.addEventListener('hashchange', route);
+    if (!location.hash) location.hash = '#/checklist';
+    route();
+  }
+
+  var TABS = {
+    'checklist': { tpl: 'tpl-checklist', init: 'initChecklistPage' },
+    'dashboard': { tpl: 'tpl-dashboard', init: 'initDashboardPage' },
+    'stores':    { tpl: 'tpl-stores',    init: 'initStoresPage' }
+  };
+
+  function route() {
+    var key = (location.hash.replace('#/', '') || 'checklist').split('?')[0];
+    if (!TABS[key]) key = 'checklist';
+
+    $all('.tabs a').forEach(function (a) {
+      a.classList.toggle('active', a.dataset.tab === key);
+    });
+
+    var content = $('#content');
+    content.innerHTML = '';
+    var tpl = document.getElementById(TABS[key].tpl);
+    if (tpl) {
+      content.appendChild(tpl.content.cloneNode(true));
+    } else {
+      content.innerHTML = '<div class="placeholder">페이지를 찾을 수 없습니다.</div>';
+    }
+    // 페이지별 초기화 훅(있으면 호출)
+    var initFn = window[TABS[key].init];
+    if (typeof initFn === 'function') {
+      try { initFn(window.MP); } catch (e) { console.error(e); }
+    }
+  }
+
+  /* ── 시작 ─────────────────────────────────────────────── */
+
+  function start() {
+    var cfg = window.__BUILD__ || {};
+    // 서버가 최신 설정을 알고 있을 수 있으니 한 번 확인
+    gs('getAuthConfig')
+      .then(function (c) {
+        window.__BUILD__ = Object.assign({}, cfg, c);
+        if (loadSession()) { boot(); } else { showLogin(); }
+      })
+      .catch(function () {
+        if (loadSession()) { boot(); } else { showLogin('서버에 연결할 수 없습니다.'); }
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', start);
+})();
+</script>
+
+</body>
+</html>

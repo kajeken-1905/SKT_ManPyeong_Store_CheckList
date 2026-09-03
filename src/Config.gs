@@ -43,35 +43,35 @@ var INSPECTOR_ROLES = [ROLES.GROUP_LEADER, ROLES.HEAD, ROLES.CEO];
 var ALL_STORE_ROLES = [ROLES.HEAD, ROLES.CEO];
 
 // ── 점검 항목 (만점 100점) ──────────────────────────────────
-// critical: '중요항목' 여부. 중요항목 중 X 표시가 CRITICAL_X_THRESHOLD 개 이상이면 재점검 필요.
-// TODO(확인필요): 실제 '중요항목'이 어떤 항목인지 미확정. 현재는 임시로 1번/5번을 지정.
+// critical: '중요항목' 여부. 10개 항목 모두 동등하게 중요항목(사용자 확인, 2026-09-03).
+// → 항목 중 X 표시가 CRITICAL_X_THRESHOLD(2) 개 이상이면 재점검 필요.
 var CHECKLIST_ITEMS = [
   { id: 'Q1',  no: 1,  max: 20, critical: true,
     name: '고객 상담석의 청결 및 정리정돈 상태',
     desc: '오염정도, 개인물품 등의 정리 상태, 업무용 기기 및 책자·팜플렛 정리 상태 등 전반적인 상태 점검' },
-  { id: 'Q2',  no: 2,  max: 10, critical: false,
+  { id: 'Q2',  no: 2,  max: 10, critical: true,
     name: '매장 외부 기초 청소 상태 점검', desc: '' },
-  { id: 'Q3',  no: 3,  max: 10, critical: false,
+  { id: 'Q3',  no: 3,  max: 10, critical: true,
     name: '매장 내부 기초 청소 상태 점검', desc: '' },
-  { id: 'Q4',  no: 4,  max: 10, critical: false,
+  { id: 'Q4',  no: 4,  max: 10, critical: true,
     name: '출입문 및 유리창의 관리상태', desc: '' },
   { id: 'Q5',  no: 5,  max: 10, critical: true,
     name: 'VMD, 손글씨, 현수막 상태 점검',
     desc: '너덜너덜한 VMD 상태 및 포스터 찢어짐, 오염 등' },
-  { id: 'Q6',  no: 6,  max: 10, critical: false,
+  { id: 'Q6',  no: 6,  max: 10, critical: true,
     name: '고객 대기 공간의 청결 상태', desc: '대기 공간 전체의 청결 및 정리정돈 상태' },
-  { id: 'Q7',  no: 7,  max: 10, critical: false,
+  { id: 'Q7',  no: 7,  max: 10, critical: true,
     name: '매장 내부 가구 상태 점검', desc: '악세사리장, 쓰레기통, 수납장 등' },
-  { id: 'Q8',  no: 8,  max: 5,  critical: false,
+  { id: 'Q8',  no: 8,  max: 5,  critical: true,
     name: '근무자 모두의 복장 및 용모', desc: '유니폼, 신발, 고객에게 거부감을 줄만한 모든 부분 등' },
-  { id: 'Q9',  no: 9,  max: 10, critical: false,
+  { id: 'Q9',  no: 9,  max: 10, critical: true,
     name: '단말기 시연 매대 관리', desc: '청결, 시연폰 관리' },
-  { id: 'Q10', no: 10, max: 5,  critical: false,
+  { id: 'Q10', no: 10, max: 5,  critical: true,
     name: '정수기, 공기청정기 및 냉난방기 등 편의 시설의 관리', desc: '' }
 ];
 
 var MAX_TOTAL = 100;               // 항목 배점 합계
-var CRITICAL_X_THRESHOLD = 2;      // 중요항목 X 표시 2개 이상 → 재점검
+var CRITICAL_X_THRESHOLD = 2;      // X 표시 2개 이상 → 재점검
 
 // ── 판정 규칙 ────────────────────────────────────────────────
 // total 점수로 평가결과 / 재점검 필요 여부 결정.
