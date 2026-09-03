@@ -22,6 +22,7 @@ const includes = {
   "ui/page-dashboard": read(path.join(UI, 'page-dashboard.html')),
   "ui/page-stores": read(path.join(UI, 'page-stores.html')),
   "ui/pages": read(path.join(UI, 'pages.html')),
+  "ui/checklist": read(path.join(UI, 'checklist.html')),
   "ui/app": read(path.join(UI, 'app.html')),
 };
 
@@ -114,6 +115,18 @@ const MOCK = `
         user: u, stores: stores, items: ITEMS, gradeRules: GRADE_RULES,
         under90Actions: ACTIONS, maxTotal: 100, criticalXThreshold: 2,
         serverTime: new Date().toISOString().slice(0, 19)
+      };
+    },
+    saveInspection: function (token, payload) {
+      var ev = API.previewEvaluation(token, (payload && payload.entries) || []);
+      return {
+        inspection_id: 'INS_mock_' + Date.now(),
+        status: payload && payload.status === '제출' ? '제출' : '임시저장',
+        total: ev.total, grade: ev.grade, needRecheck: ev.needRecheck,
+        under90: ev.under90, criticalXCount: ev.criticalXCount, actions: ev.actions,
+        photos: ((payload && payload.photos) || []).map(function (p) {
+          return { ok: true, kind: p.kind, url: '#mock' };
+        })
       };
     },
     previewEvaluation: function (token, entries) {

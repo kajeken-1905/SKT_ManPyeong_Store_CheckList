@@ -1,23 +1,8 @@
 <script>
-/* 페이지별 초기화 훅 (Phase 1: 연결 확인용 최소 구현) */
-
-function initChecklistPage(MP) {
-  if (!MP || !MP.boot) return;
-  var dl = document.getElementById('bootInfo');
-  if (!dl) return;
-  var b = MP.boot, u = MP.user;
-  var rows = [
-    ['로그인 사용자', u.name + ' (' + u.role + ')'],
-    ['이메일', u.email || '(미등록 · 개발 로그인)'],
-    ['담당', u.canSeeAllStores ? '전체 매장' : u.team],
-    ['접근 가능 매장 수', String(b.stores.length) + '개'],
-    ['점검 항목 수', String(b.items.length) + '개 / 만점 ' + b.maxTotal + '점'],
-    ['서버 시각', b.serverTime]
-  ];
-  dl.innerHTML = rows.map(function (r) {
-    return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>';
-  }).join('');
-}
+/* 페이지별 초기화 훅.
+ * - initChecklistPage: ui/checklist.html 에 정의 (Phase 2)
+ * - initDashboardPage / initStoresPage: Phase 3~4 에서 구현
+ */
 
 function initStoresPage(MP) {
   if (!MP || !MP.boot) return;

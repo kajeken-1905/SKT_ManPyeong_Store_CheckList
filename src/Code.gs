@@ -81,14 +81,21 @@ function previewEvaluation(token, entries) {
   });
 }
 
-/* ────────────────────────────────────────────────────────────
- *  Phase 2~4 에서 구현 예정 (자리표시자)
- * ──────────────────────────────────────────────────────────── */
-
-/** [Phase 2] 점검 저장 */
+/**
+ * [Phase 2] 점검 저장 (신규 작성).
+ * @param {string} token 세션 토큰
+ * @param {Object} payload {store_id, inspectedAt, recheckRound, status, entries[], photos[]}
+ * @return {Object} {inspection_id, status, total, grade, needRecheck, under90, actions, photos[]}
+ */
 function saveInspection(token, payload) {
-  throw new Error('아직 구현되지 않았습니다. (Phase 2)');
+  return withAuth_(token, INSPECTOR_ROLES, function (user) {
+    return createInspection_(user, payload);
+  });
 }
+
+/* ────────────────────────────────────────────────────────────
+ *  Phase 3~4 에서 구현 예정 (자리표시자)
+ * ──────────────────────────────────────────────────────────── */
 
 /** [Phase 3] 대시보드 데이터 */
 function getDashboard(token, filter) {

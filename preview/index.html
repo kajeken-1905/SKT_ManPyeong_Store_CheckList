@@ -4,19 +4,29 @@
   <base target="_top">
   <meta charset="utf-8">
   <style>
+  /* ── 디자인 토큰 (따뜻한 카페 톤) ───────────────────────── */
   :root {
-    --green: #7aa84f;
-    --green-dark: #5f8a3a;
-    --bg: #f4f5f2;
-    --card: #ffffff;
-    --line: #d9ddd3;
-    --text: #23271f;
-    --muted: #6b7264;
-    --danger: #c0392b;
-    --warn: #d99a00;
-    --ok: #2e7d32;
-    --radius: 10px;
-    --shadow: 0 1px 3px rgba(0,0,0,.08), 0 6px 20px rgba(0,0,0,.04);
+    --bg: #f4eee5;
+    --surface: #ffffff;
+    --surface-2: #faf5ee;
+    --line: #e7dcca;
+    --text: #2e2621;
+    --muted: #8c7b6a;
+    --brand: #6b4a32;       /* 에스프레소 */
+    --brand-ink: #ffffff;
+    --brand-soft: #efe3d5;
+    --accent: #c08552;      /* 카라멜 */
+    --ok: #4e7c59;
+    --ok-soft: #e4efe4;
+    --warn: #b1802f;
+    --warn-soft: #f5ead2;
+    --danger: #b24c38;
+    --danger-soft: #f6e0d9;
+    --radius: 16px;
+    --radius-lg: 22px;
+    --radius-sm: 10px;
+    --shadow: 0 1px 2px rgba(60,40,25,.06), 0 12px 30px rgba(60,40,25,.08);
+    --shadow-up: 0 -6px 20px rgba(60,40,25,.10);
   }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
@@ -26,150 +36,235 @@
     background: var(--bg);
     color: var(--text);
     font-size: 15px;
-    line-height: 1.5;
+    line-height: 1.55;
     -webkit-text-size-adjust: 100%;
   }
   [hidden] { display: none !important; }
   a { color: inherit; text-decoration: none; }
+  h2, h3 { color: var(--text); }
 
   .btn {
     appearance: none;
-    border: 1px solid var(--green-dark);
-    background: var(--green);
-    color: #fff;
+    border: 1px solid var(--brand);
+    background: var(--brand);
+    color: var(--brand-ink);
     font: inherit;
-    font-weight: 600;
-    padding: 10px 16px;
-    border-radius: 8px;
+    font-weight: 700;
+    padding: 11px 20px;
+    border-radius: 999px;
     cursor: pointer;
-    transition: filter .15s;
+    transition: filter .15s, transform .05s;
   }
-  .btn:hover { filter: brightness(1.05); }
-  .btn:active { filter: brightness(.95); }
+  .btn:hover { filter: brightness(1.08); }
+  .btn:active { transform: translateY(1px); }
+  .btn:disabled { opacity: .55; cursor: default; }
   .btn-ghost {
     background: transparent;
-    color: var(--muted);
+    color: var(--brand);
     border-color: var(--line);
   }
 
   /* ── 로그인 ── */
-  .login-view {
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
-    padding: 24px;
-  }
+  .login-view { min-height: 100vh; display: grid; place-items: center; padding: 24px; }
   .login-card {
-    width: 100%;
-    max-width: 380px;
-    background: var(--card);
+    width: 100%; max-width: 380px;
+    background: var(--surface);
     border: 1px solid var(--line);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     box-shadow: var(--shadow);
-    padding: 32px 28px;
+    padding: 36px 30px;
     text-align: center;
   }
-  .login-title {
-    font-size: 20px;
-    margin: 0 0 6px;
-    color: var(--green-dark);
-    line-height: 1.35;
-  }
-  .login-sub { margin: 0 0 24px; color: var(--muted); font-size: 13px; }
+  .login-title { font-size: 21px; margin: 0 0 6px; color: var(--brand); line-height: 1.35; }
+  .login-sub { margin: 0 0 26px; color: var(--muted); font-size: 13px; }
   .google-btn-wrap { display: flex; justify-content: center; min-height: 44px; }
-  .dev-login { margin-top: 20px; padding-top: 20px; border-top: 1px dashed var(--line); }
+  .dev-login { margin-top: 22px; padding-top: 22px; border-top: 1px dashed var(--line); }
   .dev-label { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
   .dev-btns { display: flex; gap: 8px; justify-content: center; }
-  .dev-btns .btn { flex: 1; padding: 10px 8px; }
+  .dev-btns .btn { flex: 1; padding: 11px 8px; }
   .login-msg { margin: 16px 0 0; color: var(--danger); font-size: 13px; white-space: pre-line; min-height: 18px; }
 
   /* ── 상단바 ── */
   .topbar {
-    background: var(--card);
+    background: var(--surface);
     border-bottom: 1px solid var(--line);
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 0 16px;
-    height: 56px;
-    position: sticky;
-    top: 0;
-    z-index: 10;
+    display: flex; align-items: center; gap: 16px;
+    padding: 0 18px; height: 58px;
+    position: sticky; top: 0; z-index: 10;
     flex-wrap: wrap;
   }
-  .brand { font-weight: 700; color: var(--green-dark); white-space: nowrap; }
+  .brand { font-weight: 800; color: var(--brand); white-space: nowrap; letter-spacing: -.01em; }
   .tabs { display: flex; gap: 4px; flex: 1; overflow-x: auto; }
   .tabs a {
-    padding: 8px 14px;
-    border-radius: 8px;
-    color: var(--muted);
-    font-weight: 600;
-    white-space: nowrap;
+    padding: 8px 15px; border-radius: 999px;
+    color: var(--muted); font-weight: 700; white-space: nowrap;
   }
-  .tabs a.active { background: var(--green); color: #fff; }
+  .tabs a.active { background: var(--brand); color: var(--brand-ink); }
   .user-box { display: flex; align-items: center; gap: 10px; }
   .user-label { font-size: 13px; color: var(--muted); white-space: nowrap; }
 
-  /* ── 본문 ── */
-  .content { max-width: 1000px; margin: 0 auto; padding: 20px 16px 60px; }
+  /* ── 본문 공통 ── */
+  .content { max-width: 860px; margin: 0 auto; padding: 24px 16px 40px; }
   .loading { color: var(--muted); padding: 40px 0; text-align: center; }
-
-  .page-head { margin: 0 0 16px; }
-  .page-head h2 { margin: 0 0 4px; font-size: 18px; }
+  .page-head { margin: 0 0 18px; }
+  .page-head h2 { margin: 0 0 4px; font-size: 20px; letter-spacing: -.01em; }
   .page-head p { margin: 0; color: var(--muted); font-size: 13px; }
 
   .card {
-    background: var(--card);
+    background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     padding: 20px;
     margin-bottom: 16px;
   }
+  .sec-title { margin: 0 0 12px; font-size: 15px; }
+
   .placeholder {
-    text-align: center;
-    color: var(--muted);
-    padding: 48px 20px;
-    border: 2px dashed var(--line);
-    border-radius: var(--radius);
+    text-align: center; color: var(--muted);
+    padding: 48px 20px; border: 2px dashed var(--line); border-radius: var(--radius);
   }
   .placeholder .badge {
-    display: inline-block;
-    background: var(--green);
-    color: #fff;
-    font-size: 12px;
-    font-weight: 700;
-    padding: 3px 10px;
-    border-radius: 999px;
-    margin-bottom: 12px;
+    display: inline-block; background: var(--brand); color: var(--brand-ink);
+    font-size: 12px; font-weight: 700; padding: 3px 12px; border-radius: 999px; margin-bottom: 12px;
   }
   .kv { display: grid; grid-template-columns: 120px 1fr; gap: 6px 12px; font-size: 14px; }
   .kv dt { color: var(--muted); }
   .kv dd { margin: 0; }
 
   table.mini { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
-  table.mini th, table.mini td { border: 1px solid var(--line); padding: 6px 8px; text-align: left; }
-  table.mini th { background: #eef1ea; }
+  table.mini th, table.mini td { border: 1px solid var(--line); padding: 7px 9px; text-align: left; }
+  table.mini th { background: var(--surface-2); }
 
   .toast {
-    position: fixed;
-    left: 50%;
-    bottom: 24px;
-    transform: translateX(-50%);
-    background: #23271f;
-    color: #fff;
-    padding: 10px 18px;
-    border-radius: 999px;
-    font-size: 13px;
-    box-shadow: var(--shadow);
-    z-index: 50;
+    position: fixed; left: 50%; bottom: 88px; transform: translateX(-50%);
+    background: var(--text); color: #fff; padding: 11px 20px; border-radius: 999px;
+    font-size: 13px; box-shadow: var(--shadow); z-index: 60; max-width: 90vw; text-align: center;
   }
 
+  /* ── 입력 필드 공통 ── */
+  .fld { display: flex; flex-direction: column; gap: 6px; }
+  .fld-label { font-size: 12px; font-weight: 700; color: var(--muted); }
+  input[type="text"], input[type="number"], input[type="datetime-local"],
+  select, textarea {
+    font: inherit; color: var(--text);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    padding: 10px 12px;
+    width: 100%;
+  }
+  input:focus, select:focus, textarea:focus {
+    outline: none; border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(192,133,82,.16);
+  }
+  input[readonly] { color: var(--muted); background: var(--surface-2); }
+  textarea { resize: vertical; min-height: 40px; }
+
+  /* ── 체크리스트 작성 페이지 ── */
+  .cl-head {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  }
+  .cl-items { }
+  .item-card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    padding: 16px;
+    margin-bottom: 12px;
+  }
+  .item-card.has-x { border-left: 4px solid var(--danger); }
+  .item-top { display: flex; gap: 12px; align-items: flex-start; }
+  .item-no {
+    flex-shrink: 0;
+    width: 28px; height: 28px; border-radius: 999px;
+    background: var(--brand-soft); color: var(--brand);
+    font-weight: 800; font-size: 13px;
+    display: grid; place-items: center;
+  }
+  .item-name { flex: 1; min-width: 0; }
+  .item-name strong { display: block; font-size: 14px; line-height: 1.4; }
+  .item-name .item-desc { display: block; color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .item-max { flex-shrink: 0; color: var(--muted); font-size: 12px; font-weight: 700; white-space: nowrap; }
+
+  .item-score {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin: 12px 0 10px;
+  }
+  .item-range { flex: 1; min-width: 150px; accent-color: var(--brand); }
+  input.item-num { width: 76px; flex: 0 0 auto; text-align: center; font-weight: 700; padding: 8px 6px; }
+  .item-x {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 12px; font-weight: 700; color: var(--muted); white-space: nowrap; cursor: pointer;
+  }
+  .item-x input { width: 16px; height: 16px; accent-color: var(--danger); }
+  .item-card textarea { margin-top: 8px; font-size: 13px; min-height: 38px; }
+
+  /* 사진 */
+  .photo-row { display: flex; gap: 10px; flex-wrap: wrap; }
+  .photo-add {
+    border: 1.5px dashed var(--line); border-radius: var(--radius-sm);
+    padding: 10px 16px; font-size: 13px; font-weight: 700; color: var(--brand);
+    cursor: pointer; background: var(--surface-2);
+  }
+  .photo-add:hover { border-color: var(--accent); }
+  .photo-preview { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+  .photo-thumb { position: relative; width: 96px; height: 96px; border-radius: var(--radius-sm); overflow: hidden; border: 1px solid var(--line); }
+  .photo-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .photo-thumb .p-kind {
+    position: absolute; left: 4px; top: 4px; background: rgba(46,38,33,.8); color: #fff;
+    font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 999px;
+  }
+  .photo-thumb .p-del {
+    position: absolute; right: 4px; top: 4px; width: 20px; height: 20px; border-radius: 999px;
+    border: none; background: rgba(46,38,33,.8); color: #fff; font-size: 12px; cursor: pointer;
+    display: grid; place-items: center; line-height: 1;
+  }
+
+  /* 90점 미만 안내 */
+  .cl-actions { background: var(--danger-soft); border-color: var(--danger); }
+  .cl-actions .sec-title { color: var(--danger); }
+  .cl-actions ol { margin: 0; padding-left: 20px; font-size: 13px; }
+  .cl-actions li { margin: 4px 0; }
+
+  /* 하단 고정 요약 바 */
+  .cl-summary {
+    position: sticky; bottom: 0; z-index: 20;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius) var(--radius) 0 0;
+    box-shadow: var(--shadow-up);
+    padding: 14px 18px;
+    display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    margin: 8px -16px 0;
+  }
+  .cl-sum-score { font-weight: 800; font-size: 15px; color: var(--muted); }
+  .cl-sum-score #clTotal { font-size: 26px; color: var(--brand); }
+  .cl-sum-mid { display: flex; align-items: center; gap: 8px; flex: 1; }
+  .grade-badge {
+    display: inline-block; padding: 4px 12px; border-radius: 999px;
+    font-size: 13px; font-weight: 800;
+    background: var(--surface-2); color: var(--muted);
+  }
+  .grade-badge.g-ok { background: var(--ok-soft); color: var(--ok); }
+  .grade-badge.g-warn { background: var(--warn-soft); color: var(--warn); }
+  .grade-badge.g-danger { background: var(--danger-soft); color: var(--danger); }
+  .recheck-badge {
+    display: inline-block; padding: 4px 12px; border-radius: 999px;
+    font-size: 12px; font-weight: 800; background: var(--danger); color: #fff;
+  }
+  .cl-sum-btns { display: flex; gap: 8px; }
+
   @media (max-width: 640px) {
-    .topbar { height: auto; padding: 8px 12px; }
+    .topbar { height: auto; padding: 8px 14px; }
     .brand { width: 100%; }
     .user-box { width: 100%; justify-content: space-between; }
-    .content { padding: 16px 12px 48px; }
+    .content { padding: 18px 14px 32px; }
+    .cl-head { grid-template-columns: 1fr; }
+    .cl-summary { margin: 8px -14px 0; padding: 12px 14px; }
+    .cl-sum-btns { width: 100%; }
+    .cl-sum-btns .btn { flex: 1; }
   }
 </style>
 
@@ -217,33 +312,71 @@
 
     <div id="pageTemplates" hidden>
       <template id="tpl-checklist">
-  <div class="page-head">
-    <h2>체크리스트 작성</h2>
-    <p>매장을 방문해 10개 항목을 점검하고 총점·판정을 기록합니다.</p>
-  </div>
-
-  <div class="card">
-    <div class="placeholder">
-      <span class="badge">Phase 2 예정</span>
-      <p>이 페이지에서 구현될 기능:</p>
-      <table class="mini" id="checklistPlanTable">
-        <thead><tr><th>구분</th><th>내용</th></tr></thead>
-        <tbody>
-          <tr><td>헤더</td><td>매장 선택 · 점검일시(자동) · 점검자(로그인 사용자)</td></tr>
-          <tr><td>항목 입력</td><td>10개 항목 점수 · 사유 · 기타 특이점 · 중요결함(X)</td></tr>
-          <tr><td>실시간 판정</td><td>총점, 우수/양호/관리필요/개선필요, 재점검 필요 여부</td></tr>
-          <tr><td>90점 미만 안내</td><td>후속 조치 3가지 자동 노출</td></tr>
-          <tr><td>사진</td><td>개선 전/후 사진 업로드(Drive 저장)</td></tr>
-          <tr><td>저장</td><td>임시저장 / 제출</td></tr>
-        </tbody>
-      </table>
+  <form id="clForm" class="cl" autocomplete="off">
+    <div class="page-head">
+      <h2>체크리스트 작성</h2>
+      <p>매장을 방문해 10개 항목을 점검하고 총점·판정을 기록합니다.</p>
     </div>
-  </div>
 
-  <div class="card" id="bootInfoCard">
-    <strong>로그인/데이터 연결 확인용 정보</strong>
-    <dl class="kv" id="bootInfo" style="margin-top:10px;"></dl>
-  </div>
+    <div class="card cl-head">
+      <label class="fld">
+        <span class="fld-label">매장</span>
+        <select id="clStore" required>
+          <option value="">매장 선택…</option>
+        </select>
+      </label>
+      <label class="fld">
+        <span class="fld-label">점검일시</span>
+        <input type="datetime-local" id="clDate" required>
+      </label>
+      <label class="fld">
+        <span class="fld-label">점검자</span>
+        <input type="text" id="clInspector" readonly>
+      </label>
+      <label class="fld">
+        <span class="fld-label">점검 구분</span>
+        <select id="clRound">
+          <option value="0">최초 점검</option>
+          <option value="1">재점검 1회차</option>
+          <option value="2">재점검 2회차</option>
+        </select>
+      </label>
+    </div>
+
+    <div id="clItems" class="cl-items"></div>
+
+    <div class="card">
+      <h3 class="sec-title">개선 사진 (선택)</h3>
+      <div class="photo-row">
+        <label class="photo-add">
+          <input type="file" class="cl-photo" data-kind="전" accept="image/*" hidden>
+          전(前) 사진 추가
+        </label>
+        <label class="photo-add">
+          <input type="file" class="cl-photo" data-kind="후" accept="image/*" hidden>
+          후(後) 사진 추가
+        </label>
+      </div>
+      <div id="clPhotoPreview" class="photo-preview"></div>
+    </div>
+
+    <div id="clActions" class="card cl-actions" hidden>
+      <h3 class="sec-title">90점 미만 — 후속 조치</h3>
+      <ol id="clActionList"></ol>
+    </div>
+
+    <div class="cl-summary">
+      <div class="cl-sum-score"><span id="clTotal">0</span><span> / 100점</span></div>
+      <div class="cl-sum-mid">
+        <span id="clGrade" class="grade-badge">—</span>
+        <span id="clRecheck" class="recheck-badge" hidden>재점검 필요</span>
+      </div>
+      <div class="cl-sum-btns">
+        <button type="button" id="clSaveDraft" class="btn btn-ghost">임시저장</button>
+        <button type="submit" id="clSubmit" class="btn">제출</button>
+      </div>
+    </div>
+  </form>
 </template>
 
       <template id="tpl-dashboard">
@@ -386,6 +519,18 @@
         serverTime: new Date().toISOString().slice(0, 19)
       };
     },
+    saveInspection: function (token, payload) {
+      var ev = API.previewEvaluation(token, (payload && payload.entries) || []);
+      return {
+        inspection_id: 'INS_mock_' + Date.now(),
+        status: payload && payload.status === '제출' ? '제출' : '임시저장',
+        total: ev.total, grade: ev.grade, needRecheck: ev.needRecheck,
+        under90: ev.under90, criticalXCount: ev.criticalXCount, actions: ev.actions,
+        photos: ((payload && payload.photos) || []).map(function (p) {
+          return { ok: true, kind: p.kind, url: '#mock' };
+        })
+      };
+    },
     previewEvaluation: function (token, entries) {
       var map = {}; ITEMS.forEach(function (i) { map[i.item_id] = i; });
       var total = 0, cx = 0, breakdown = [];
@@ -431,25 +576,10 @@
 })();
 </script>
 <script>
-/* 페이지별 초기화 훅 (Phase 1: 연결 확인용 최소 구현) */
-
-function initChecklistPage(MP) {
-  if (!MP || !MP.boot) return;
-  var dl = document.getElementById('bootInfo');
-  if (!dl) return;
-  var b = MP.boot, u = MP.user;
-  var rows = [
-    ['로그인 사용자', u.name + ' (' + u.role + ')'],
-    ['이메일', u.email || '(미등록 · 개발 로그인)'],
-    ['담당', u.canSeeAllStores ? '전체 매장' : u.team],
-    ['접근 가능 매장 수', String(b.stores.length) + '개'],
-    ['점검 항목 수', String(b.items.length) + '개 / 만점 ' + b.maxTotal + '점'],
-    ['서버 시각', b.serverTime]
-  ];
-  dl.innerHTML = rows.map(function (r) {
-    return '<dt>' + r[0] + '</dt><dd>' + r[1] + '</dd>';
-  }).join('');
-}
+/* 페이지별 초기화 훅.
+ * - initChecklistPage: ui/checklist.html 에 정의 (Phase 2)
+ * - initDashboardPage / initStoresPage: Phase 3~4 에서 구현
+ */
 
 function initStoresPage(MP) {
   if (!MP || !MP.boot) return;
@@ -464,6 +594,288 @@ function initStoresPage(MP) {
 function initDashboardPage(MP) {
   /* Phase 3 에서 구현 */
 }
+</script>
+
+  <script>
+/* ────────────────────────────────────────────────────────────
+ *  체크리스트 작성 페이지 (Phase 2)
+ *  - 10개 항목 점수 입력 → 실시간 총점·판정
+ *  - 개선 전/후 사진(클라이언트 축소) 첨부
+ *  - 임시저장 / 제출  → 서버 saveInspection
+ * ──────────────────────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  var PHOTO_MAX_DIM = 1600;
+  var PHOTO_QUALITY = 0.8;
+
+  // route() 가 이 이름을 호출한다.
+  window.initChecklistPage = function (MP) {
+    if (!MP || !MP.boot) return;
+    var boot = MP.boot, user = MP.user;
+
+    var form = document.getElementById('clForm');
+    if (!form) return;
+
+    var elStore = document.getElementById('clStore');
+    var elDate = document.getElementById('clDate');
+    var elInspector = document.getElementById('clInspector');
+    var elRound = document.getElementById('clRound');
+    var elItems = document.getElementById('clItems');
+    var elTotal = document.getElementById('clTotal');
+    var elGrade = document.getElementById('clGrade');
+    var elRecheck = document.getElementById('clRecheck');
+    var elActions = document.getElementById('clActions');
+    var elActionList = document.getElementById('clActionList');
+    var elPhotoPreview = document.getElementById('clPhotoPreview');
+    var btnDraft = document.getElementById('clSaveDraft');
+    var btnSubmit = document.getElementById('clSubmit');
+
+    var photos = [];   // { kind, dataUrl, name }
+    var busy = false;
+
+    /* 매장 옵션 */
+    boot.stores.forEach(function (s) {
+      var o = document.createElement('option');
+      o.value = s.store_id;
+      o.textContent = s.name + ' (' + s.team + ')';
+      elStore.appendChild(o);
+    });
+    if (boot.stores.length === 1) elStore.value = boot.stores[0].store_id;
+
+    /* 점검일시 = 현재(로컬) */
+    var now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    elDate.value = now.toISOString().slice(0, 16);
+
+    /* 점검자 */
+    elInspector.value = user.name + ' · ' + user.role;
+
+    /* 항목 카드 생성 */
+    boot.items.forEach(function (it) {
+      elItems.appendChild(buildItemCard(it));
+    });
+
+    elItems.addEventListener('input', onItemInput);
+    elItems.addEventListener('change', onItemInput);
+    form.addEventListener('submit', function (e) { e.preventDefault(); save('제출'); });
+    btnDraft.addEventListener('click', function () { save('임시저장'); });
+
+    form.querySelectorAll('.cl-photo').forEach(function (inp) {
+      inp.addEventListener('change', function () { onPickPhoto(inp); });
+    });
+
+    recompute();
+
+    /* ── 항목 카드 ──────────────────────────────────────── */
+    function buildItemCard(it) {
+      var card = document.createElement('div');
+      card.className = 'item-card';
+      card.dataset.item = it.item_id;
+      card.dataset.max = it.max;
+      card.innerHTML =
+        '<div class="item-top">' +
+          '<span class="item-no">' + it.no + '</span>' +
+          '<span class="item-name"><strong>' + esc(it.name) + '</strong>' +
+            (it.desc ? '<span class="item-desc">' + esc(it.desc) + '</span>' : '') +
+          '</span>' +
+          '<span class="item-max">/ ' + it.max + '점</span>' +
+        '</div>' +
+        '<div class="item-score">' +
+          '<input type="range" class="item-range" min="0" max="' + it.max + '" step="1" value="' + it.max + '">' +
+          '<input type="number" class="item-num" min="0" max="' + it.max + '" step="1" value="' + it.max + '">' +
+          '<label class="item-x"><input type="checkbox" class="item-xbox"> 중요결함 X</label>' +
+        '</div>' +
+        '<textarea class="item-reason" rows="1" placeholder="사유 (감점 시 입력)"></textarea>' +
+        '<textarea class="item-note" rows="1" placeholder="기타 특이점"></textarea>';
+      return card;
+    }
+
+    function onItemInput(e) {
+      var t = e.target;
+      var card = t.closest('.item-card');
+      if (!card) return;
+      var max = Number(card.dataset.max);
+
+      if (t.classList.contains('item-range')) {
+        card.querySelector('.item-num').value = t.value;
+      } else if (t.classList.contains('item-num')) {
+        var v = clamp(parseInt(t.value, 10) || 0, 0, max);
+        t.value = v;
+        card.querySelector('.item-range').value = v;
+      } else if (t.classList.contains('item-xbox')) {
+        card.classList.toggle('has-x', t.checked);
+      }
+      recompute();
+    }
+
+    /* ── 실시간 판정 ────────────────────────────────────── */
+    function collectEntries() {
+      return Array.prototype.map.call(elItems.querySelectorAll('.item-card'), function (card) {
+        return {
+          item_id: card.dataset.item,
+          score: Number(card.querySelector('.item-num').value) || 0,
+          isX: card.querySelector('.item-xbox').checked,
+          reason: card.querySelector('.item-reason').value.trim(),
+          note: card.querySelector('.item-note').value.trim()
+        };
+      });
+    }
+
+    function recompute() {
+      var ev = evaluate(boot.items, collectEntries(), boot.gradeRules, boot.criticalXThreshold);
+      elTotal.textContent = ev.total;
+      elGrade.textContent = ev.grade;
+      elGrade.className = 'grade-badge ' + gradeClass(ev.grade);
+      elRecheck.hidden = !ev.needRecheck;
+
+      if (ev.under90) {
+        elActionList.innerHTML = boot.under90Actions.map(function (a) {
+          return '<li>' + esc(a) + '</li>';
+        }).join('');
+        elActions.hidden = false;
+      } else {
+        elActions.hidden = true;
+      }
+    }
+
+    /* ── 사진 ──────────────────────────────────────────── */
+    function onPickPhoto(inp) {
+      var file = inp.files && inp.files[0];
+      inp.value = '';
+      if (!file) return;
+      if (!/^image\//.test(file.type)) { MP.toast('이미지 파일만 첨부할 수 있습니다.'); return; }
+      downscale(file, PHOTO_MAX_DIM, PHOTO_QUALITY).then(function (dataUrl) {
+        photos.push({ kind: inp.dataset.kind, dataUrl: dataUrl, name: file.name });
+        renderPhotos();
+      }).catch(function () { MP.toast('사진을 불러오지 못했습니다.'); });
+    }
+
+    function renderPhotos() {
+      elPhotoPreview.innerHTML = '';
+      photos.forEach(function (p, i) {
+        var d = document.createElement('div');
+        d.className = 'photo-thumb';
+        d.innerHTML =
+          '<img src="' + p.dataUrl + '" alt="">' +
+          '<span class="p-kind">' + p.kind + '</span>' +
+          '<button type="button" class="p-del" aria-label="삭제">×</button>';
+        d.querySelector('.p-del').addEventListener('click', function () {
+          photos.splice(i, 1); renderPhotos();
+        });
+        elPhotoPreview.appendChild(d);
+      });
+    }
+
+    /* ── 저장 ──────────────────────────────────────────── */
+    function save(status) {
+      if (busy) return;
+      if (!elStore.value) { MP.toast('매장을 선택하세요.'); elStore.focus(); return; }
+      if (!elDate.value) { MP.toast('점검일시를 입력하세요.'); elDate.focus(); return; }
+
+      var entries = collectEntries();
+      if (status === '제출') {
+        var ev = evaluate(boot.items, entries, boot.gradeRules, boot.criticalXThreshold);
+        var msg = '제출하시겠습니까?\n\n총점 ' + ev.total + '점 · ' + ev.grade +
+          (ev.needRecheck ? '\n재점검 필요' : '');
+        if (!window.confirm(msg)) return;
+      }
+
+      var payload = {
+        store_id: elStore.value,
+        inspectedAt: elDate.value,
+        recheckRound: Number(elRound.value) || 0,
+        status: status,
+        entries: entries,
+        photos: photos.map(function (p) {
+          return { kind: p.kind, dataBase64: p.dataUrl, mimeType: 'image/jpeg', filename: p.name };
+        })
+      };
+
+      setBusy(true);
+      MP.gs('saveInspection', MP.token, payload)
+        .then(function (res) {
+          setBusy(false);
+          var failed = (res.photos || []).filter(function (x) { return !x.ok; }).length;
+          MP.toast(
+            (res.status === '제출' ? '제출 완료' : '임시저장 완료') +
+            ' · 총점 ' + res.total + '점 · ' + res.grade +
+            (failed ? ' (사진 ' + failed + '장 실패)' : '')
+          );
+          if (res.status === '제출') location.hash = '#/dashboard';
+        })
+        .catch(function (e) {
+          setBusy(false);
+          MP.toast('저장 실패: ' + (e && e.message ? e.message : e));
+        });
+    }
+
+    function setBusy(b) {
+      busy = b;
+      btnDraft.disabled = b;
+      btnSubmit.disabled = b;
+      btnSubmit.textContent = b ? '저장 중…' : '제출';
+    }
+  };
+
+  /* ── 순수 함수 ──────────────────────────────────────── */
+
+  function evaluate(items, entries, gradeRules, xThreshold) {
+    var map = {};
+    items.forEach(function (i) { map[i.item_id] = i; });
+    var total = 0, cx = 0;
+    entries.forEach(function (e) {
+      var it = map[e.item_id];
+      if (!it) return;
+      var s = clamp(Number(e.score) || 0, 0, it.max);
+      total += s;
+      if (e.isX && it.critical) cx++;
+    });
+    total = Math.round(total * 10) / 10;
+    var rule = gradeRules.filter(function (r) { return total >= r.min; })[0] || gradeRules[gradeRules.length - 1];
+    return {
+      total: total,
+      grade: rule.grade,
+      needRecheck: rule.recheck || cx >= xThreshold,
+      under90: total < 90,
+      criticalXCount: cx
+    };
+  }
+
+  function gradeClass(grade) {
+    if (grade === '우수' || grade === '양호') return 'g-ok';
+    if (grade === '관리 필요') return 'g-warn';
+    return 'g-danger';
+  }
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function downscale(file, maxDim, quality) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var scale = Math.min(1, maxDim / Math.max(w, h));
+        var cw = Math.round(w * scale), ch = Math.round(h * scale);
+        var c = document.createElement('canvas');
+        c.width = cw; c.height = ch;
+        c.getContext('2d').drawImage(img, 0, 0, cw, ch);
+        URL.revokeObjectURL(url);
+        try { resolve(c.toDataURL('image/jpeg', quality)); }
+        catch (e) { reject(e); }
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('image load error')); };
+      img.src = url;
+    });
+  }
+})();
 </script>
 
   <script>

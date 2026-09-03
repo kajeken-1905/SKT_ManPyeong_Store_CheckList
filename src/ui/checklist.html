@@ -1,0 +1,281 @@
+<script>
+/* ────────────────────────────────────────────────────────────
+ *  체크리스트 작성 페이지 (Phase 2)
+ *  - 10개 항목 점수 입력 → 실시간 총점·판정
+ *  - 개선 전/후 사진(클라이언트 축소) 첨부
+ *  - 임시저장 / 제출  → 서버 saveInspection
+ * ──────────────────────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  var PHOTO_MAX_DIM = 1600;
+  var PHOTO_QUALITY = 0.8;
+
+  // route() 가 이 이름을 호출한다.
+  window.initChecklistPage = function (MP) {
+    if (!MP || !MP.boot) return;
+    var boot = MP.boot, user = MP.user;
+
+    var form = document.getElementById('clForm');
+    if (!form) return;
+
+    var elStore = document.getElementById('clStore');
+    var elDate = document.getElementById('clDate');
+    var elInspector = document.getElementById('clInspector');
+    var elRound = document.getElementById('clRound');
+    var elItems = document.getElementById('clItems');
+    var elTotal = document.getElementById('clTotal');
+    var elGrade = document.getElementById('clGrade');
+    var elRecheck = document.getElementById('clRecheck');
+    var elActions = document.getElementById('clActions');
+    var elActionList = document.getElementById('clActionList');
+    var elPhotoPreview = document.getElementById('clPhotoPreview');
+    var btnDraft = document.getElementById('clSaveDraft');
+    var btnSubmit = document.getElementById('clSubmit');
+
+    var photos = [];   // { kind, dataUrl, name }
+    var busy = false;
+
+    /* 매장 옵션 */
+    boot.stores.forEach(function (s) {
+      var o = document.createElement('option');
+      o.value = s.store_id;
+      o.textContent = s.name + ' (' + s.team + ')';
+      elStore.appendChild(o);
+    });
+    if (boot.stores.length === 1) elStore.value = boot.stores[0].store_id;
+
+    /* 점검일시 = 현재(로컬) */
+    var now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    elDate.value = now.toISOString().slice(0, 16);
+
+    /* 점검자 */
+    elInspector.value = user.name + ' · ' + user.role;
+
+    /* 항목 카드 생성 */
+    boot.items.forEach(function (it) {
+      elItems.appendChild(buildItemCard(it));
+    });
+
+    elItems.addEventListener('input', onItemInput);
+    elItems.addEventListener('change', onItemInput);
+    form.addEventListener('submit', function (e) { e.preventDefault(); save('제출'); });
+    btnDraft.addEventListener('click', function () { save('임시저장'); });
+
+    form.querySelectorAll('.cl-photo').forEach(function (inp) {
+      inp.addEventListener('change', function () { onPickPhoto(inp); });
+    });
+
+    recompute();
+
+    /* ── 항목 카드 ──────────────────────────────────────── */
+    function buildItemCard(it) {
+      var card = document.createElement('div');
+      card.className = 'item-card';
+      card.dataset.item = it.item_id;
+      card.dataset.max = it.max;
+      card.innerHTML =
+        '<div class="item-top">' +
+          '<span class="item-no">' + it.no + '</span>' +
+          '<span class="item-name"><strong>' + esc(it.name) + '</strong>' +
+            (it.desc ? '<span class="item-desc">' + esc(it.desc) + '</span>' : '') +
+          '</span>' +
+          '<span class="item-max">/ ' + it.max + '점</span>' +
+        '</div>' +
+        '<div class="item-score">' +
+          '<input type="range" class="item-range" min="0" max="' + it.max + '" step="1" value="' + it.max + '">' +
+          '<input type="number" class="item-num" min="0" max="' + it.max + '" step="1" value="' + it.max + '">' +
+          '<label class="item-x"><input type="checkbox" class="item-xbox"> 중요결함 X</label>' +
+        '</div>' +
+        '<textarea class="item-reason" rows="1" placeholder="사유 (감점 시 입력)"></textarea>' +
+        '<textarea class="item-note" rows="1" placeholder="기타 특이점"></textarea>';
+      return card;
+    }
+
+    function onItemInput(e) {
+      var t = e.target;
+      var card = t.closest('.item-card');
+      if (!card) return;
+      var max = Number(card.dataset.max);
+
+      if (t.classList.contains('item-range')) {
+        card.querySelector('.item-num').value = t.value;
+      } else if (t.classList.contains('item-num')) {
+        var v = clamp(parseInt(t.value, 10) || 0, 0, max);
+        t.value = v;
+        card.querySelector('.item-range').value = v;
+      } else if (t.classList.contains('item-xbox')) {
+        card.classList.toggle('has-x', t.checked);
+      }
+      recompute();
+    }
+
+    /* ── 실시간 판정 ────────────────────────────────────── */
+    function collectEntries() {
+      return Array.prototype.map.call(elItems.querySelectorAll('.item-card'), function (card) {
+        return {
+          item_id: card.dataset.item,
+          score: Number(card.querySelector('.item-num').value) || 0,
+          isX: card.querySelector('.item-xbox').checked,
+          reason: card.querySelector('.item-reason').value.trim(),
+          note: card.querySelector('.item-note').value.trim()
+        };
+      });
+    }
+
+    function recompute() {
+      var ev = evaluate(boot.items, collectEntries(), boot.gradeRules, boot.criticalXThreshold);
+      elTotal.textContent = ev.total;
+      elGrade.textContent = ev.grade;
+      elGrade.className = 'grade-badge ' + gradeClass(ev.grade);
+      elRecheck.hidden = !ev.needRecheck;
+
+      if (ev.under90) {
+        elActionList.innerHTML = boot.under90Actions.map(function (a) {
+          return '<li>' + esc(a) + '</li>';
+        }).join('');
+        elActions.hidden = false;
+      } else {
+        elActions.hidden = true;
+      }
+    }
+
+    /* ── 사진 ──────────────────────────────────────────── */
+    function onPickPhoto(inp) {
+      var file = inp.files && inp.files[0];
+      inp.value = '';
+      if (!file) return;
+      if (!/^image\//.test(file.type)) { MP.toast('이미지 파일만 첨부할 수 있습니다.'); return; }
+      downscale(file, PHOTO_MAX_DIM, PHOTO_QUALITY).then(function (dataUrl) {
+        photos.push({ kind: inp.dataset.kind, dataUrl: dataUrl, name: file.name });
+        renderPhotos();
+      }).catch(function () { MP.toast('사진을 불러오지 못했습니다.'); });
+    }
+
+    function renderPhotos() {
+      elPhotoPreview.innerHTML = '';
+      photos.forEach(function (p, i) {
+        var d = document.createElement('div');
+        d.className = 'photo-thumb';
+        d.innerHTML =
+          '<img src="' + p.dataUrl + '" alt="">' +
+          '<span class="p-kind">' + p.kind + '</span>' +
+          '<button type="button" class="p-del" aria-label="삭제">×</button>';
+        d.querySelector('.p-del').addEventListener('click', function () {
+          photos.splice(i, 1); renderPhotos();
+        });
+        elPhotoPreview.appendChild(d);
+      });
+    }
+
+    /* ── 저장 ──────────────────────────────────────────── */
+    function save(status) {
+      if (busy) return;
+      if (!elStore.value) { MP.toast('매장을 선택하세요.'); elStore.focus(); return; }
+      if (!elDate.value) { MP.toast('점검일시를 입력하세요.'); elDate.focus(); return; }
+
+      var entries = collectEntries();
+      if (status === '제출') {
+        var ev = evaluate(boot.items, entries, boot.gradeRules, boot.criticalXThreshold);
+        var msg = '제출하시겠습니까?\n\n총점 ' + ev.total + '점 · ' + ev.grade +
+          (ev.needRecheck ? '\n재점검 필요' : '');
+        if (!window.confirm(msg)) return;
+      }
+
+      var payload = {
+        store_id: elStore.value,
+        inspectedAt: elDate.value,
+        recheckRound: Number(elRound.value) || 0,
+        status: status,
+        entries: entries,
+        photos: photos.map(function (p) {
+          return { kind: p.kind, dataBase64: p.dataUrl, mimeType: 'image/jpeg', filename: p.name };
+        })
+      };
+
+      setBusy(true);
+      MP.gs('saveInspection', MP.token, payload)
+        .then(function (res) {
+          setBusy(false);
+          var failed = (res.photos || []).filter(function (x) { return !x.ok; }).length;
+          MP.toast(
+            (res.status === '제출' ? '제출 완료' : '임시저장 완료') +
+            ' · 총점 ' + res.total + '점 · ' + res.grade +
+            (failed ? ' (사진 ' + failed + '장 실패)' : '')
+          );
+          if (res.status === '제출') location.hash = '#/dashboard';
+        })
+        .catch(function (e) {
+          setBusy(false);
+          MP.toast('저장 실패: ' + (e && e.message ? e.message : e));
+        });
+    }
+
+    function setBusy(b) {
+      busy = b;
+      btnDraft.disabled = b;
+      btnSubmit.disabled = b;
+      btnSubmit.textContent = b ? '저장 중…' : '제출';
+    }
+  };
+
+  /* ── 순수 함수 ──────────────────────────────────────── */
+
+  function evaluate(items, entries, gradeRules, xThreshold) {
+    var map = {};
+    items.forEach(function (i) { map[i.item_id] = i; });
+    var total = 0, cx = 0;
+    entries.forEach(function (e) {
+      var it = map[e.item_id];
+      if (!it) return;
+      var s = clamp(Number(e.score) || 0, 0, it.max);
+      total += s;
+      if (e.isX && it.critical) cx++;
+    });
+    total = Math.round(total * 10) / 10;
+    var rule = gradeRules.filter(function (r) { return total >= r.min; })[0] || gradeRules[gradeRules.length - 1];
+    return {
+      total: total,
+      grade: rule.grade,
+      needRecheck: rule.recheck || cx >= xThreshold,
+      under90: total < 90,
+      criticalXCount: cx
+    };
+  }
+
+  function gradeClass(grade) {
+    if (grade === '우수' || grade === '양호') return 'g-ok';
+    if (grade === '관리 필요') return 'g-warn';
+    return 'g-danger';
+  }
+
+  function clamp(v, lo, hi) { return Math.max(lo, Math.min(hi, v)); }
+
+  function esc(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function downscale(file, maxDim, quality) {
+    return new Promise(function (resolve, reject) {
+      var url = URL.createObjectURL(file);
+      var img = new Image();
+      img.onload = function () {
+        var w = img.naturalWidth, h = img.naturalHeight;
+        var scale = Math.min(1, maxDim / Math.max(w, h));
+        var cw = Math.round(w * scale), ch = Math.round(h * scale);
+        var c = document.createElement('canvas');
+        c.width = cw; c.height = ch;
+        c.getContext('2d').drawImage(img, 0, 0, cw, ch);
+        URL.revokeObjectURL(url);
+        try { resolve(c.toDataURL('image/jpeg', quality)); }
+        catch (e) { reject(e); }
+      };
+      img.onerror = function () { URL.revokeObjectURL(url); reject(new Error('image load error')); };
+      img.src = url;
+    });
+  }
+})();
+</script>
