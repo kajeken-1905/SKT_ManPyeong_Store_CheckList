@@ -1,0 +1,5 @@
+# src 밖의 파일은 Apps Script 로 올리지 않는다
+**/**
+!appsscript.json
+!*.gs
+!ui/*.html

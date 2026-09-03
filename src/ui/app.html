@@ -1,0 +1,205 @@
+<script>
+/* ────────────────────────────────────────────────────────────
+ *  만평대리점 체크리스트 — 클라이언트 앱 셸 (Phase 1)
+ * ──────────────────────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  var SESSION_KEY = 'mp_session';
+  var state = { token: null, user: null, boot: null };
+
+  /* google.script.run → Promise 래퍼 */
+  function gs(fn) {
+    var args = Array.prototype.slice.call(arguments, 1);
+    return new Promise(function (resolve, reject) {
+      var runner = google.script.run
+        .withSuccessHandler(resolve)
+        .withFailureHandler(function (err) { reject(err); });
+      runner[fn].apply(runner, args);
+    });
+  }
+
+  function $(sel, root) { return (root || document).querySelector(sel); }
+  function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+  function toast(msg) {
+    var t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = msg;
+    document.body.appendChild(t);
+    setTimeout(function () { t.remove(); }, 2600);
+  }
+
+  function saveSession(token) {
+    state.token = token;
+    try { sessionStorage.setItem(SESSION_KEY, token); } catch (e) {}
+  }
+  function loadSession() {
+    try { return sessionStorage.getItem(SESSION_KEY); } catch (e) { return null; }
+  }
+  function clearSession() {
+    state.token = null;
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+  }
+
+  /* ── 로그인 화면 ───────────────────────────────────────── */
+
+  function showLogin(msg) {
+    $('#appView').hidden = true;
+    $('#loginView').hidden = false;
+    if (msg) $('#loginMsg').textContent = msg;
+
+    var cfg = window.__BUILD__ || {};
+
+    // 개발용 임시 로그인
+    if (cfg.devMode) {
+      var wrap = $('#devLoginWrap');
+      wrap.hidden = false;
+      $all('.dev-btns .btn', wrap).forEach(function (b) {
+        b.onclick = function () {
+          $('#loginMsg').textContent = '';
+          gs('devLogin', b.dataset.role)
+            .then(onLoggedIn)
+            .catch(function (e) { $('#loginMsg').textContent = errText(e); });
+        };
+      });
+    }
+
+    // Google 로그인 (클라이언트 ID 있을 때만)
+    if (cfg.googleClientId) {
+      loadGis(cfg.googleClientId);
+    } else if (!cfg.devMode) {
+      $('#loginMsg').textContent =
+        '로그인 수단이 설정되지 않았습니다.\n서버에 GOOGLE_CLIENT_ID 를 설정하거나 DEV_MODE 를 켜세요.';
+    }
+  }
+
+  function loadGis(clientId) {
+    var wrap = $('#googleBtnWrap');
+    wrap.hidden = false;
+    if (window.google && google.accounts && google.accounts.id) {
+      renderGis(clientId);
+      return;
+    }
+    var s = document.createElement('script');
+    s.src = 'https://accounts.google.com/gsi/client';
+    s.async = true;
+    s.defer = true;
+    s.onload = function () { renderGis(clientId); };
+    s.onerror = function () { $('#loginMsg').textContent = 'Google 로그인 스크립트를 불러오지 못했습니다.'; };
+    document.head.appendChild(s);
+  }
+
+  function renderGis(clientId) {
+    google.accounts.id.initialize({
+      client_id: clientId,
+      callback: function (resp) {
+        $('#loginMsg').textContent = '';
+        gs('login', resp.credential)
+          .then(onLoggedIn)
+          .catch(function (e) { $('#loginMsg').textContent = errText(e); });
+      }
+    });
+    google.accounts.id.renderButton($('#googleBtnWrap'), {
+      theme: 'outline', size: 'large', text: 'signin_with', locale: 'ko'
+    });
+  }
+
+  function errText(e) {
+    if (!e) return '알 수 없는 오류';
+    return e.message || String(e);
+  }
+
+  /* ── 로그인 성공 → 부트스트랩 ───────────────────────────── */
+
+  function onLoggedIn(res) {
+    saveSession(res.token);
+    boot();
+  }
+
+  function boot() {
+    var token = state.token || loadSession();
+    if (!token) { showLogin(); return; }
+    state.token = token;
+
+    gs('getBootstrap', token)
+      .then(function (data) {
+        state.boot = data;
+        state.user = data.user;
+        window.MP = { boot: data, user: data.user, gs: gs, toast: toast, token: token };
+        renderApp();
+      })
+      .catch(function (e) {
+        clearSession();
+        showLogin(errText(e));
+      });
+  }
+
+  /* ── 앱 셸 ─────────────────────────────────────────────── */
+
+  function renderApp() {
+    $('#loginView').hidden = true;
+    $('#appView').hidden = false;
+
+    var u = state.user;
+    $('#userLabel').textContent = u.name + ' · ' + u.role +
+      (u.canSeeAllStores ? ' (전체)' : ' (' + u.team + ')');
+
+    $('#logoutBtn').onclick = function () {
+      clearSession();
+      location.hash = '';
+      location.reload();
+    };
+
+    window.addEventListener('hashchange', route);
+    if (!location.hash) location.hash = '#/checklist';
+    route();
+  }
+
+  var TABS = {
+    'checklist': { tpl: 'tpl-checklist', init: 'initChecklistPage' },
+    'dashboard': { tpl: 'tpl-dashboard', init: 'initDashboardPage' },
+    'stores':    { tpl: 'tpl-stores',    init: 'initStoresPage' }
+  };
+
+  function route() {
+    var key = (location.hash.replace('#/', '') || 'checklist').split('?')[0];
+    if (!TABS[key]) key = 'checklist';
+
+    $all('.tabs a').forEach(function (a) {
+      a.classList.toggle('active', a.dataset.tab === key);
+    });
+
+    var content = $('#content');
+    content.innerHTML = '';
+    var tpl = document.getElementById(TABS[key].tpl);
+    if (tpl) {
+      content.appendChild(tpl.content.cloneNode(true));
+    } else {
+      content.innerHTML = '<div class="placeholder">페이지를 찾을 수 없습니다.</div>';
+    }
+    // 페이지별 초기화 훅(있으면 호출)
+    var initFn = window[TABS[key].init];
+    if (typeof initFn === 'function') {
+      try { initFn(window.MP); } catch (e) { console.error(e); }
+    }
+  }
+
+  /* ── 시작 ─────────────────────────────────────────────── */
+
+  function start() {
+    var cfg = window.__BUILD__ || {};
+    // 서버가 최신 설정을 알고 있을 수 있으니 한 번 확인
+    gs('getAuthConfig')
+      .then(function (c) {
+        window.__BUILD__ = Object.assign({}, cfg, c);
+        if (loadSession()) { boot(); } else { showLogin(); }
+      })
+      .catch(function () {
+        if (loadSession()) { boot(); } else { showLogin('서버에 연결할 수 없습니다.'); }
+      });
+  }
+
+  document.addEventListener('DOMContentLoaded', start);
+})();
+</script>

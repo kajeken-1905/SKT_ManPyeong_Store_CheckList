@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <?!= include('ui/styles'); ?>
+</head>
+<body>
+  <!-- 로그인 화면 -->
+  <section id="loginView" class="login-view">
+    <div class="login-card">
+      <h1 class="login-title">만평대리점<br>매장 점검 체크리스트</h1>
+      <p class="login-sub">그룹장 · 총괄 · 대표 전용</p>
+
+      <div id="googleBtnWrap" class="google-btn-wrap" hidden></div>
+
+      <div id="devLoginWrap" class="dev-login" hidden>
+        <p class="dev-label">개발용 임시 로그인</p>
+        <div class="dev-btns">
+          <button class="btn" data-role="그룹장">그룹장</button>
+          <button class="btn" data-role="총괄">총괄</button>
+          <button class="btn" data-role="대표">대표</button>
+        </div>
+      </div>
+
+      <p id="loginMsg" class="login-msg" role="alert"></p>
+    </div>
+  </section>
+
+  <!-- 앱 본체 -->
+  <div id="appView" class="app-view" hidden>
+    <header class="topbar">
+      <div class="brand">만평대리점 점검</div>
+      <nav class="tabs">
+        <a href="#/checklist" data-tab="checklist">체크리스트 작성</a>
+        <a href="#/dashboard" data-tab="dashboard">결과 대시보드</a>
+        <a href="#/stores" data-tab="stores">매장별 관리</a>
+      </nav>
+      <div class="user-box">
+        <span id="userLabel" class="user-label"></span>
+        <button id="logoutBtn" class="btn btn-ghost">로그아웃</button>
+      </div>
+    </header>
+
+    <main id="content" class="content">
+      <div class="loading">불러오는 중…</div>
+    </main>
+
+    <div id="pageTemplates" hidden>
+      <?!= include('ui/page-checklist'); ?>
+      <?!= include('ui/page-dashboard'); ?>
+      <?!= include('ui/page-stores'); ?>
+    </div>
+  </div>
+
+  <script>
+    window.__BUILD__ = <?!= JSON.stringify(build); ?>;
+  </script>
+  <?!= include('ui/pages'); ?>
+  <?!= include('ui/app'); ?>
+</body>
+</html>
