@@ -336,3 +336,130 @@ function getInspectionDetail_(user, inspectionId) {
     under90Actions: (Number(ins['총점']) || 0) < 90 ? UNDER_90_ACTIONS.slice() : []
   };
 }
+
+/* ────────────────────────────────────────────────────────────
+ *  Phase 4 — 매장별 종합 관리 (일/주/월/연)
+ * ──────────────────────────────────────────────────────────── */
+
+/** 'yyyy-MM-dd' → ISO 주 키 'YYYY-Www'. */
+function isoWeekKey_(day) {
+  var p = String(day).split('-');
+  var d = new Date(Number(p[0]), Number(p[1]) - 1, Number(p[2]));
+  return Utilities.formatDate(d, 'Asia/Seoul', "YYYY-'W'ww");
+}
+
+/** 점검일시 → 분기 키 'yyyy-Qn'. */
+function quarterKey_(at) {
+  var day = String(at).slice(0, 10);
+  var mo = Number(day.slice(5, 7)) || 1;
+  return day.slice(0, 4) + '-Q' + Math.ceil(mo / 3);
+}
+
+function insBrief_(i) {
+  return {
+    inspection_id: i.inspection_id, at: i.at, total: i.total,
+    grade: i.grade, round: i.round, recheck: i.recheck
+  };
+}
+
+/**
+ * 매장 1곳의 기간별(일/주/월/연) 누적 점수와 이력.
+ * @param {Object} user 세션 payload
+ * @param {string} storeId
+ * @param {string} period 'day' | 'week' | 'month' | 'year'
+ */
+function getStoreSummary_(user, storeId, period) {
+  var store = findById_(SHEETS.STORES, 'store_id', storeId);
+  if (!store) throw new Error('존재하지 않는 매장입니다: ' + storeId);
+  assertStoreAccess_(user, storeId);
+  period = ['day', 'week', 'month', 'year'].indexOf(period) >= 0 ? period : 'month';
+
+  var rows = query_(SHEETS.INSPECTIONS, { store_id: storeId })
+    .map(function (r) { return toInsView_(r, {}); })
+    .filter(function (i) { return i.status === '제출'; })
+    .sort(function (a, b) { return a.at < b.at ? -1 : a.at > b.at ? 1 : 0; }); // 오래된 순
+
+  function bucketKey(at) {
+    var day = at.slice(0, 10);
+    if (period === 'day') return day;
+    if (period === 'month') return day.slice(0, 7);
+    if (period === 'year') return day.slice(0, 4);
+    return isoWeekKey_(day);
+  }
+
+  var buckets = {}, order = [];
+  rows.forEach(function (i) {
+    var k = bucketKey(i.at);
+    if (!buckets[k]) { buckets[k] = { key: k, scores: [], recheck: 0, under90: 0, count: 0 }; order.push(k); }
+    var b = buckets[k];
+    b.scores.push(i.total);
+    b.count++;
+    if (i.recheck) b.recheck++;
+    if (i.under90) b.under90++;
+  });
+
+  var series = order.map(function (k) {
+    var b = buckets[k];
+    var sum = b.scores.reduce(function (t, x) { return t + x; }, 0);
+    return {
+      key: k, label: k,
+      avg: Math.round(sum / b.scores.length * 10) / 10,
+      min: Math.min.apply(null, b.scores),
+      max: Math.max.apply(null, b.scores),
+      count: b.count, recheckCount: b.recheck, under90Count: b.under90
+    };
+  });
+
+  var allScores = rows.map(function (i) { return i.total; });
+  var overall = {
+    count: rows.length,
+    avg: allScores.length ? Math.round(allScores.reduce(function (t, x) { return t + x; }, 0) / allScores.length * 10) / 10 : null,
+    min: allScores.length ? Math.min.apply(null, allScores) : null,
+    max: allScores.length ? Math.max.apply(null, allScores) : null,
+    recheckCount: rows.filter(function (i) { return i.recheck; }).length,
+    under90Count: rows.filter(function (i) { return i.under90; }).length,
+    currentUnder90Streak: 0
+  };
+  for (var j = rows.length - 1; j >= 0; j--) { if (rows[j].under90) overall.currentUnder90Streak++; else break; }
+
+  // 2회 연속 90점 미만 → 분기별 VD 수수료 재정산 대상
+  var penalty = [];
+  for (var m = 1; m < rows.length; m++) {
+    if (rows[m].under90 && rows[m - 1].under90) {
+      var q = quarterKey_(rows[m].at);
+      var last = penalty[penalty.length - 1];
+      if (last && last.quarter === q) {
+        last.inspections.push(insBrief_(rows[m]));
+      } else {
+        penalty.push({
+          quarter: q,
+          reason: '2회 연속 90점 미만 → 해당 분기 VD 수수료 50% 재정산',
+          inspections: [insBrief_(rows[m - 1]), insBrief_(rows[m])]
+        });
+      }
+    }
+  }
+
+  var rechecks = rows.filter(function (i) { return i.recheck || i.round > 0; })
+    .map(insBrief_).reverse();
+
+  var records = rows.slice().reverse().map(function (i) {
+    return {
+      inspection_id: i.inspection_id, at: i.at, total: i.total, grade: i.grade,
+      recheck: i.recheck, round: i.round, inspector: i.inspector, status: i.status
+    };
+  });
+
+  return {
+    store: {
+      store_id: store.store_id, name: store['매장명'], team: store['팀'],
+      leader: store['그룹장'], head: store['총괄']
+    },
+    period: period,
+    series: series,
+    overall: overall,
+    penalty: penalty,
+    rechecks: rechecks,
+    records: records
+  };
+}

@@ -4,28 +4,35 @@
     <p>매장을 선택해 일 / 주 / 월 / 연 단위 누적 점수와 이력을 관리합니다.</p>
   </div>
 
-  <div class="card">
-    <div class="placeholder">
-      <span class="badge">Phase 4 예정</span>
-      <p>이 페이지에서 구현될 기능:</p>
-      <table class="mini">
-        <thead><tr><th>구분</th><th>내용</th></tr></thead>
-        <tbody>
-          <tr><td>기간 탭</td><td>일 / 주 / 월 / 연</td></tr>
-          <tr><td>추이 그래프</td><td>기간별 점수 변화</td></tr>
-          <tr><td>누적 점수</td><td>평균 · 최저, 재점검 횟수, 90점 미만 연속 횟수</td></tr>
-          <tr><td>이력</td><td>재점검 · VD 수수료 재정산 대상 이력</td></tr>
-          <tr><td>내보내기</td><td>엑셀 / PDF</td></tr>
-        </tbody>
-      </table>
+  <div class="card sm-controls">
+    <label class="fld sm-store-fld">
+      <span class="fld-label">매장</span>
+      <select id="smStore"></select>
+    </label>
+    <div class="sm-tabs" role="tablist">
+      <button type="button" class="sm-tab is-active" data-period="day">일</button>
+      <button type="button" class="sm-tab" data-period="week">주</button>
+      <button type="button" class="sm-tab" data-period="month">월</button>
+      <button type="button" class="sm-tab" data-period="year">연</button>
+    </div>
+    <div class="sm-export no-print">
+      <button type="button" id="smCsv" class="btn btn-ghost">엑셀(CSV)</button>
+      <button type="button" id="smPrint" class="btn btn-ghost">인쇄 / PDF</button>
     </div>
   </div>
 
-  <div class="card">
-    <strong>접근 가능 매장</strong>
-    <table class="mini" id="storeList" style="margin-top:10px;">
-      <thead><tr><th>매장코드</th><th>매장명</th><th>팀</th><th>그룹장</th></tr></thead>
-      <tbody></tbody>
-    </table>
+  <div id="smBody"><div class="loading">불러오는 중…</div></div>
+
+  <div id="smModal" class="modal" hidden>
+    <div class="modal-box">
+      <div class="modal-head no-print">
+        <strong>점검 상세</strong>
+        <span>
+          <button type="button" id="smmPrint" class="btn btn-ghost">인쇄 / PDF</button>
+          <button type="button" id="smmClose" class="btn btn-ghost">닫기</button>
+        </span>
+      </div>
+      <div id="smmBody"></div>
+    </div>
   </div>
 </template>

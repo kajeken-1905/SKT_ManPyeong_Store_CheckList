@@ -1,0 +1,260 @@
+<script>
+/* ────────────────────────────────────────────────────────────
+ *  매장별 종합 관리 (Phase 4)
+ *  - 매장 선택 + 일/주/월/연 탭
+ *  - 기간별 점수 추이(인라인 SVG) · 누적 통계 · 재정산/재점검 이력 · 점검 기록
+ *  - 엑셀(CSV) / 인쇄(PDF)
+ * ──────────────────────────────────────────────────────────── */
+(function () {
+  'use strict';
+
+  var PERIOD_LABEL = { day: '일', week: '주', month: '월', year: '연' };
+
+  window.initStoresPage = function (MP) {
+    if (!MP || !MP.boot) return;
+    var root = document.getElementById('smBody');
+    if (!root) return;
+
+    var elStore = document.getElementById('smStore');
+    var tabs = Array.prototype.slice.call(document.querySelectorAll('.sm-tab'));
+    var modal = document.getElementById('smModal');
+    var smmBody = document.getElementById('smmBody');
+    var state = { period: 'day', data: null };
+
+    MP.boot.stores.forEach(function (s) {
+      var o = document.createElement('option');
+      o.value = s.store_id; o.textContent = s.name;
+      elStore.appendChild(o);
+    });
+    if (MP.boot.stores[0]) elStore.value = MP.boot.stores[0].store_id;
+
+    elStore.addEventListener('change', load);
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function () {
+        tabs.forEach(function (x) { x.classList.toggle('is-active', x === t); });
+        state.period = t.dataset.period;
+        load();
+      });
+    });
+    document.getElementById('smCsv').addEventListener('click', downloadCsv);
+    document.getElementById('smPrint').addEventListener('click', function () { window.print(); });
+    document.getElementById('smmClose').addEventListener('click', closeModal);
+    document.getElementById('smmPrint').addEventListener('click', function () { window.print(); });
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+
+    load();
+
+    /* ── 로드 ───────────────────────────────────────────── */
+    function load() {
+      if (!elStore.value) { root.innerHTML = '<div class="card">매장이 없습니다.</div>'; return; }
+      root.innerHTML = '<div class="loading">불러오는 중…</div>';
+      MP.gs('getStoreSummary', MP.token, elStore.value, state.period)
+        .then(function (d) { state.data = d; render(d); })
+        .catch(function (e) {
+          root.innerHTML = '<div class="card">불러오지 못했습니다: ' + esc(errText(e)) + '</div>';
+        });
+    }
+
+    /* ── 렌더 ───────────────────────────────────────────── */
+    function render(d) {
+      var o = d.overall;
+      var head =
+        '<div class="card sm-head">' +
+          '<h3>' + esc(d.store.name) + '</h3>' +
+          '<p class="sm-sub">' + esc(d.store.team) + ' · 그룹장 ' + esc(d.store.leader) +
+          ' · 단위: ' + PERIOD_LABEL[d.period] + '</p>' +
+        '</div>';
+
+      var tiles =
+        '<div class="tiles sm-tiles">' +
+          tile('점검 건수', o.count) +
+          tile('평균 점수', o.avg == null ? '—' : o.avg) +
+          tile('최저 점수', o.min == null ? '—' : o.min, o.min != null && o.min < 90 ? 'danger' : '') +
+          tile('재점검', o.recheckCount, o.recheckCount ? 'warn' : '') +
+          tile('90점 미만', o.under90Count, o.under90Count ? 'danger' : '') +
+          tile('현재 연속 미만', o.currentUnder90Streak, o.currentUnder90Streak >= 2 ? 'danger' : '') +
+        '</div>';
+
+      var chart =
+        '<div class="card"><h3 class="sec-title">기간별 점수 추이 (' + PERIOD_LABEL[d.period] + ')</h3>' +
+        trendSvg(d.series, d.period) +
+        '<table class="mini"><thead><tr><th>구간</th><th>평균</th><th>최저</th><th>최고</th><th>건수</th><th>재점검</th><th>90미만</th></tr></thead><tbody>' +
+        (d.series.length ? d.series.slice().reverse().map(function (s) {
+          return '<tr><td>' + esc(shortLabel(s.label, d.period)) + '</td><td>' + s.avg + '</td>' +
+            '<td>' + s.min + '</td><td>' + s.max + '</td><td>' + s.count + '</td>' +
+            '<td>' + s.recheckCount + '</td><td>' + s.under90Count + '</td></tr>';
+        }).join('') : '<tr><td colspan="7">제출된 점검이 없습니다.</td></tr>') +
+        '</tbody></table></div>';
+
+      var penalty =
+        '<div class="card"><h3 class="sec-title">VD 수수료 재정산 대상 이력</h3>' +
+        (d.penalty.length ? d.penalty.map(function (p) {
+          return '<div class="pen-item"><strong>' + esc(p.quarter) + '</strong> — ' + esc(p.reason) +
+            '<div class="pen-ins">' + p.inspections.map(function (x) {
+              return '<span class="chip d">' + esc(x.at) + ' · ' + x.total + '점</span>';
+            }).join('') + '</div></div>';
+        }).join('') : '<p class="sm-none">해당 없음</p>') +
+        '</div>';
+
+      var rechecks =
+        '<div class="card"><h3 class="sec-title">재점검 이력 (' + d.rechecks.length + '건)</h3>' +
+        (d.rechecks.length ?
+          '<table class="mini"><thead><tr><th>점검일시</th><th>총점</th><th>판정</th><th>구분</th></tr></thead><tbody>' +
+          d.rechecks.map(function (r) {
+            return '<tr><td>' + esc(r.at) + '</td><td>' + r.total + '</td>' +
+              '<td><span class="grade-badge ' + gradeClass(r.grade) + '">' + esc(r.grade || '—') + '</span></td>' +
+              '<td>' + (r.round ? '재점검 ' + r.round + '회차' : '최초') + '</td></tr>';
+          }).join('') + '</tbody></table>'
+          : '<p class="sm-none">없음</p>') +
+        '</div>';
+
+      var records =
+        '<div class="card"><h3 class="sec-title">점검 기록 (' + d.records.length + '건)</h3>' +
+        '<table class="mini"><thead><tr><th>점검일시</th><th>총점</th><th>판정</th><th>재점검</th><th>점검자</th><th></th></tr></thead><tbody>' +
+        (d.records.length ? d.records.map(function (r) {
+          return '<tr><td>' + esc(r.at) + '</td><td>' + r.total + '</td>' +
+            '<td><span class="grade-badge ' + gradeClass(r.grade) + '">' + esc(r.grade || '—') + '</span></td>' +
+            '<td>' + (r.recheck ? '필요' : '-') + (r.round ? ' (' + r.round + '회차)' : '') + '</td>' +
+            '<td>' + esc(r.inspector) + '</td>' +
+            '<td><button type="button" class="link-btn" data-id="' + esc(r.inspection_id) + '">상세</button></td></tr>';
+        }).join('') : '<tr><td colspan="6">제출된 점검이 없습니다.</td></tr>') +
+        '</tbody></table></div>';
+
+      root.innerHTML = head + tiles + chart + penalty + rechecks + records;
+
+      Array.prototype.forEach.call(root.querySelectorAll('.link-btn[data-id]'), function (b) {
+        b.addEventListener('click', function () { openDetail(b.dataset.id); });
+      });
+    }
+
+    /* ── 추이 SVG ───────────────────────────────────────── */
+    function trendSvg(series, period) {
+      if (!series.length) return '<div class="sm-none" style="padding:20px 0">데이터가 없습니다.</div>';
+      var n = series.length;
+      var W = Math.max(680, n * 46), H = 240;
+      var padL = 34, padR = 12, padB = 48, padT = 12;
+      var plotW = W - padL - padR, plotH = H - padT - padB;
+      var yMin = 60, yMax = 100;
+      function Y(v) { v = Math.max(yMin, Math.min(yMax, v)); return padT + plotH * (1 - (v - yMin) / (yMax - yMin)); }
+      function X(i) { return padL + (n === 1 ? plotW / 2 : plotW * i / (n - 1)); }
+
+      var p = [];
+      [100, 95, 90, 85, 80, 70, 60].forEach(function (g) {
+        var dash = (g === 90 || g === 85) ? ' class="g-ref"' : ' class="g-grid"';
+        p.push('<line x1="' + padL + '" y1="' + Y(g) + '" x2="' + (W - padR) + '" y2="' + Y(g) + '"' + dash + '/>');
+        p.push('<text x="' + (padL - 5) + '" y="' + (Y(g) + 3) + '" class="g-ylab">' + g + '</text>');
+      });
+      p.push('<polyline points="' + series.map(function (s, i) { return X(i) + ',' + Y(s.avg); }).join(' ') + '" class="g-line"/>');
+      var everyN = Math.ceil(n / 12);
+      series.forEach(function (s, i) {
+        p.push('<circle cx="' + X(i) + '" cy="' + Y(s.avg) + '" r="3.4" class="g-dot"><title>' +
+          esc(shortLabel(s.label, period)) + ' 평균 ' + s.avg + ' / 최저 ' + s.min + '</title></circle>');
+        if (s.min !== s.avg) p.push('<circle cx="' + X(i) + '" cy="' + Y(s.min) + '" r="2.4" class="g-min"/>');
+        if (i % everyN === 0 || i === n - 1) {
+          p.push('<text x="' + X(i) + '" y="' + (H - padB + 16) + '" class="g-xlab" transform="rotate(35 ' + X(i) + ' ' + (H - padB + 16) + ')">' +
+            esc(shortLabel(s.label, period)) + '</text>');
+        }
+      });
+      return '<div class="sm-chart"><svg viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '">' + p.join('') + '</svg></div>';
+    }
+
+    /* ── 상세 모달 ──────────────────────────────────────── */
+    function openDetail(id) {
+      smmBody.innerHTML = '<div class="loading">불러오는 중…</div>';
+      modal.hidden = false;
+      document.body.classList.add('modal-open');
+      MP.gs('getInspectionDetail', MP.token, id)
+        .then(function (d) {
+          var i = d.inspection;
+          var rows = d.scores.map(function (s) {
+            return '<tr' + (s.isX ? ' class="row-x"' : '') + '><td>' + s.no + '</td><td>' + esc(s.name) +
+              '</td><td>' + s.score + ' / ' + s.max + '</td><td>' + (s.isX ? 'X' : '') + '</td>' +
+              '<td>' + esc(s.reason) + '</td><td>' + esc(s.note) + '</td></tr>';
+          }).join('');
+          var photos = d.photos.length
+            ? '<div class="dm-photos">' + d.photos.map(function (ph) {
+                return '<figure><img src="' + esc(ph.url) + '" alt=""><figcaption>' + esc(ph.kind) + '</figcaption></figure>';
+              }).join('') + '</div>' : '';
+          smmBody.innerHTML =
+            '<div class="dm-head"><h3>' + esc(i.store) + '</h3><dl class="kv">' +
+              kv('점검일시', esc(i.at)) + kv('점검자', esc(i.inspector + ' · ' + i.role)) +
+              kv('점검 구분', i.round ? ('재점검 ' + i.round + '회차') : '최초 점검') +
+              kv('상태', esc(i.status)) +
+              kv('총점', '<b>' + i.total + '</b> / 100 <span class="grade-badge ' + gradeClass(i.grade) + '">' + esc(i.grade) + '</span>' +
+                (i.recheck ? ' <span class="recheck-badge">재점검 필요</span>' : '')) +
+            '</dl></div>' +
+            '<table class="mini"><thead><tr><th>#</th><th>항목</th><th>점수</th><th>X</th><th>사유</th><th>기타 특이점</th></tr></thead><tbody>' +
+            rows + '</tbody></table>' + photos;
+        })
+        .catch(function (e) { smmBody.innerHTML = '<div>불러오지 못했습니다: ' + esc(errText(e)) + '</div>'; });
+    }
+    function closeModal() {
+      modal.hidden = true;
+      document.body.classList.remove('modal-open');
+      smmBody.innerHTML = '';
+    }
+
+    /* ── CSV ────────────────────────────────────────────── */
+    function downloadCsv() {
+      var d = state.data;
+      if (!d) return;
+      var rows = [];
+      rows.push(['매장', d.store.name]);
+      rows.push(['팀', d.store.team]);
+      rows.push(['기간 단위', PERIOD_LABEL[d.period]]);
+      rows.push([]);
+      rows.push(['구간', '평균', '최저', '최고', '건수', '재점검', '90점미만']);
+      d.series.forEach(function (s) {
+        rows.push([shortLabel(s.label, d.period), s.avg, s.min, s.max, s.count, s.recheckCount, s.under90Count]);
+      });
+      rows.push([]);
+      rows.push(['점검일시', '총점', '평가결과', '재점검', '회차', '점검자', '상태']);
+      d.records.forEach(function (r) {
+        rows.push([r.at, r.total, r.grade, r.recheck ? 'Y' : 'N', r.round, r.inspector, r.status]);
+      });
+      var csv = '﻿' + rows.map(function (r) {
+        return r.map(function (c) {
+          var v = c == null ? '' : String(c);
+          return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+        }).join(',');
+      }).join('\r\n');
+
+      var blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = d.store.name + '_' + PERIOD_LABEL[d.period] + '_' +
+        new Date().toISOString().slice(0, 10) + '.csv';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { URL.revokeObjectURL(a.href); a.remove(); }, 100);
+    }
+
+    function tile(label, value, cls) {
+      return '<div class="tile ' + (cls || '') + '"><div class="t-label">' + label +
+        '</div><div class="t-value">' + value + '</div></div>';
+    }
+    function kv(k, v) { return '<dt>' + k + '</dt><dd>' + v + '</dd>'; }
+  };
+
+  /* ── 공통 ───────────────────────────────────────────── */
+  function shortLabel(label, period) {
+    label = String(label || '');
+    if (period === 'day') return label.slice(5);         // MM-dd
+    if (period === 'week') return label.replace(/^\d+-/, '');  // Www
+    if (period === 'month') return label.slice(2);        // yy-MM
+    return label;                                         // yyyy
+  }
+  function gradeClass(grade) {
+    if (grade === '우수' || grade === '양호') return 'g-ok';
+    if (grade === '관리 필요') return 'g-warn';
+    if (grade === '개선 필요') return 'g-danger';
+    return '';
+  }
+  function errText(e) { return e && e.message ? e.message : String(e); }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+})();
+</script>

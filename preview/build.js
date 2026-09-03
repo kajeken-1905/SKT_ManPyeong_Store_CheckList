@@ -21,9 +21,9 @@ const includes = {
   "ui/page-checklist": read(path.join(UI, 'page-checklist.html')),
   "ui/page-dashboard": read(path.join(UI, 'page-dashboard.html')),
   "ui/page-stores": read(path.join(UI, 'page-stores.html')),
-  "ui/pages": read(path.join(UI, 'pages.html')),
   "ui/checklist": read(path.join(UI, 'checklist.html')),
   "ui/dashboard": read(path.join(UI, 'dashboard.html')),
+  "ui/stores": read(path.join(UI, 'stores.html')),
   "ui/app": read(path.join(UI, 'app.html')),
 };
 
@@ -210,6 +210,59 @@ const MOCK = `
         scores: scores, photos: [], under90Actions: total < 90 ? ACTIONS.slice() : []
       };
     },
+    getStoreSummary: function (token, storeId, period) {
+      var s = STORES.filter(function (x) { return x.store_id === storeId; })[0] || STORES[0];
+      period = ['day', 'week', 'month', 'year'].indexOf(period) >= 0 ? period : 'month';
+      var n = period === 'day' ? 20 : period === 'week' ? 16 : period === 'month' ? 12 : 3;
+      var series = [];
+      for (var i = 0; i < n; i++) {
+        var avg = Math.max(72, Math.min(100, Math.round((92 + Math.sin(i / 2) * 4 - (i % 5 === 0 ? 6 : 0)) * 10) / 10));
+        var min = Math.max(65, Math.round((avg - (2 + (i % 3) * 3)) * 10) / 10);
+        var label = period === 'day' ? ('2026-09-' + String(i + 1).padStart(2, '0'))
+          : period === 'week' ? ('2026-W' + String(20 + i))
+          : period === 'month' ? ('2026-' + String(i + 1).padStart(2, '0'))
+          : String(2024 + i);
+        series.push({
+          key: label, label: label, avg: avg, min: min, max: Math.min(100, avg + 3),
+          count: 1 + (i % 2), recheckCount: avg < 90 ? 1 : 0, under90Count: avg < 90 ? 1 : 0
+        });
+      }
+      var records = [];
+      for (var k = 0; k < 12; k++) {
+        var t = Math.max(72, Math.min(100, Math.round((90 + Math.sin(k) * 6) * 10) / 10));
+        var g = t >= 95 ? '우수' : t >= 90 ? '양호' : t >= 85 ? '관리 필요' : '개선 필요';
+        records.push({
+          inspection_id: 'INS_' + s.store_id + '_' + k,
+          at: '2026-' + String(9 - Math.floor(k / 4)).padStart(2, '0') + '-' + String(28 - (k % 4) * 7).padStart(2, '0') + ' 14:30',
+          total: t, grade: g, recheck: t < 90, round: 0,
+          inspector: '[개발]' + (s.team === '함께팀' ? '정시영' : '정수빈'), status: '제출'
+        });
+      }
+      var allAvg = series.reduce(function (a, x) { return a + x.avg; }, 0) / series.length;
+      return {
+        store: { store_id: s.store_id, name: s.name, team: s.team, leader: s.team === '함께팀' ? '정시영' : '정수빈', head: '신동훈' },
+        period: period, series: series,
+        overall: {
+          count: records.length, avg: Math.round(allAvg * 10) / 10,
+          min: Math.min.apply(null, series.map(function (x) { return x.min; })),
+          max: Math.max.apply(null, series.map(function (x) { return x.max; })),
+          recheckCount: records.filter(function (r) { return r.recheck; }).length,
+          under90Count: records.filter(function (r) { return r.total < 90; }).length,
+          currentUnder90Streak: 1
+        },
+        penalty: [{
+          quarter: '2026-Q2', reason: '2회 연속 90점 미만 → 해당 분기 VD 수수료 50% 재정산',
+          inspections: [
+            { inspection_id: 'INS_' + s.store_id + '_9', at: '2026-05-12 14:30', total: 88, grade: '관리 필요', round: 0 },
+            { inspection_id: 'INS_' + s.store_id + '_10', at: '2026-05-19 14:30', total: 84, grade: '개선 필요', round: 1 }
+          ]
+        }],
+        rechecks: records.filter(function (r) { return r.recheck; }).map(function (r) {
+          return { inspection_id: r.inspection_id, at: r.at, total: r.total, grade: r.grade, round: r.round, recheck: true };
+        }),
+        records: records
+      };
+    },
     saveInspection: function (token, payload) {
       var ev = API.previewEvaluation(token, (payload && payload.entries) || []);
       return {
@@ -268,7 +321,7 @@ const MOCK = `
 </script>
 `;
 
-html = html.replace(includes['ui/pages'], MOCK + includes['ui/pages']);
+html = html.replace(includes['ui/checklist'], MOCK + includes['ui/checklist']);
 
 // 스크립트 태그 짝 검증 (include 파일에서 </script> 누락 시 조기 발견)
 var openCount = (html.match(/<script\b/g) || []).length;

@@ -114,6 +114,7 @@
     function openDetail(id) {
       dmBody.innerHTML = '<div class="loading">불러오는 중…</div>';
       modal.hidden = false;
+      document.body.classList.add('modal-open');
       MP.gs('getInspectionDetail', MP.token, id)
         .then(function (d) {
           var i = d.inspection;
@@ -149,7 +150,11 @@
         });
     }
 
-    function closeModal() { modal.hidden = true; dmBody.innerHTML = ''; }
+    function closeModal() {
+      modal.hidden = true;
+      document.body.classList.remove('modal-open');
+      dmBody.innerHTML = '';
+    }
 
     /* ── 조각 ───────────────────────────────────────────── */
     function tile(label, value, cls) {

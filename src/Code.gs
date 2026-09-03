@@ -115,13 +115,16 @@ function getInspectionDetail(token, inspectionId) {
   });
 }
 
-/* ────────────────────────────────────────────────────────────
- *  Phase 4 에서 구현 예정 (자리표시자)
- * ──────────────────────────────────────────────────────────── */
-
-/** [Phase 4] 매장별 일/주/월/연 집계 */
+/**
+ * [Phase 4] 매장별 일/주/월/연 누적 집계 + 이력.
+ * @param {string} token
+ * @param {string} storeId
+ * @param {string} period 'day' | 'week' | 'month' | 'year'
+ */
 function getStoreSummary(token, storeId, period) {
-  throw new Error('아직 구현되지 않았습니다. (Phase 4)');
+  return withAuth_(token, null, function (user) {
+    return getStoreSummary_(user, storeId, period);
+  });
 }
 
 /* ────────────────────────────────────────────────────────────

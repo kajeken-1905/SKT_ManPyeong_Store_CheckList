@@ -314,12 +314,46 @@
   .dm-photos img { width: 100%; border-radius: var(--radius-sm); border: 1px solid var(--line); }
   .dm-photos figcaption { font-size: 12px; color: var(--muted); text-align: center; margin-top: 4px; }
 
+  /* ── 매장별 종합 관리 (Phase 4) ── */
+  .sm-controls { display: flex; gap: 16px; align-items: flex-end; flex-wrap: wrap; }
+  .sm-store-fld { min-width: 220px; flex: 1; }
+  .sm-tabs { display: flex; gap: 4px; }
+  .sm-tab {
+    appearance: none; border: 1px solid var(--line); background: var(--surface-2);
+    color: var(--muted); font: inherit; font-weight: 700; padding: 9px 16px;
+    border-radius: 999px; cursor: pointer;
+  }
+  .sm-tab.is-active { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+  .sm-export { display: flex; gap: 8px; margin-left: auto; }
+  .sm-export .btn { padding: 9px 14px; }
+  .sm-head h3 { margin: 0 0 4px; }
+  .sm-sub { margin: 0; color: var(--muted); font-size: 13px; }
+  .sm-tiles { grid-template-columns: repeat(6, 1fr); }
+  .sm-none { color: var(--muted); font-size: 13px; margin: 4px 0 0; }
+
+  .sm-chart { overflow-x: auto; margin-bottom: 12px; }
+  .sm-chart svg { display: block; }
+  .g-grid { stroke: var(--line); stroke-width: 1; }
+  .g-ref { stroke: var(--warn); stroke-width: 1; stroke-dasharray: 4 3; }
+  .g-ylab { fill: var(--muted); font-size: 10px; text-anchor: end; }
+  .g-xlab { fill: var(--muted); font-size: 10px; text-anchor: middle; }
+  .g-line { fill: none; stroke: var(--brand); stroke-width: 2; }
+  .g-dot { fill: var(--brand); }
+  .g-min { fill: var(--danger); }
+
+  .pen-item { padding: 10px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .pen-item:last-child { border-bottom: none; }
+  .pen-ins { margin-top: 6px; }
+
   @media print {
-    body * { visibility: hidden; }
-    .modal, .modal * { visibility: visible; }
-    .modal { position: absolute; inset: 0; background: #fff; padding: 0; display: block; }
+    .no-print, .topbar, .tabs, .cl-summary, .sm-tabs, .sm-export, .dash-filter { display: none !important; }
+    body:not(.modal-open) .modal { display: none !important; }
+    body.modal-open * { visibility: hidden; }
+    body.modal-open .modal, body.modal-open .modal * { visibility: visible; }
+    body.modal-open .modal { position: absolute; inset: 0; background: #fff; padding: 0; display: block; }
     .modal-box { box-shadow: none; max-height: none; max-width: none; }
-    .no-print { display: none !important; }
+    .content { padding: 0; max-width: none; }
+    .card { break-inside: avoid; box-shadow: none; }
   }
 
   @media (max-width: 640px) {
@@ -332,7 +366,10 @@
     .cl-sum-btns { width: 100%; }
     .cl-sum-btns .btn { flex: 1; }
     .dash-filter { grid-template-columns: 1fr 1fr; }
-    .tiles { grid-template-columns: 1fr 1fr; }
+    .tiles, .sm-tiles { grid-template-columns: 1fr 1fr; }
     .warn-cols { grid-template-columns: 1fr; }
+    .sm-controls { gap: 12px; }
+    .sm-export { margin-left: 0; width: 100%; }
+    .sm-export .btn { flex: 1; }
   }
 </style>
